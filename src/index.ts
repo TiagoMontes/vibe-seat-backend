@@ -2,7 +2,7 @@ import express from 'express';
 import { userRoutes } from '@/modules/user/user.routes';
 import { authRoutes } from '@/modules/auth/auth.routes';
 import { authenticateJWT } from '@/middleware/authMiddleware';
-import { approvalRoutes } from './modules/approval/approval.routes';
+import { approvalRoutes } from './modules/approvals/approvals.routes';
 
 const app = express();
 app.use(express.json());

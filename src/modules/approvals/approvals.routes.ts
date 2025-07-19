@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { approvalController } from "./approval.controller";
+import { approvalController } from "@/modules/approvals/approvals.controller";
 import { isAdmin } from "@/middleware/authMiddleware";
 
 const router = Router();
