@@ -39,7 +39,7 @@ DB_USER=root
 DB_PASSWORD=root
 DB_HOST=db
 DB_PORT=3306
-DB_NAME=massage_db
+DB_NAME=vibe_seat
 
 DATABASE_URL="mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 ```
