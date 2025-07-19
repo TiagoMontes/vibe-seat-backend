@@ -27,7 +27,7 @@ services:
       - /app/node_modules
     ports:
       - "3001:3001"
-    command: bun run src/index.ts
+    command: bun --watch src/index.ts
 
 volumes:
   db_data:
