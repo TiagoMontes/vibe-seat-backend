@@ -23,3 +23,11 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
     return res.status(403).json({ message: 'Token inválido ou expirado.' });
   }
 }
+
+export function isAdmin(req: Request, res: Response, next: NextFunction) {
+	const user = (req as any).user;
+	if (user?.role !== 'admin') {
+			return res.status(403).json({ message: 'Acesso negado' });
+	}
+	next();
+}
