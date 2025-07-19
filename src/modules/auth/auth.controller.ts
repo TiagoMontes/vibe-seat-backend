@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { prisma } from '@/lib/prisma';
-import { authService } from './auth.service';
+import { authService } from '@/modules/auth/auth.service';
+import { userService } from '@/modules/user/user.service';
 
 export const authController = {
   login: async (req: Request, res: Response) => {
@@ -15,7 +16,7 @@ export const authController = {
       return res.status(401).json({ error: 'Credenciais inválidas ou não aprovadas' });
     }
 
-    const passwordMatch = await Bun.password.verify(password, user.password);
+    const passwordMatch = await userService.verifyPassword(password, user.password);
     if (!passwordMatch) {
       return res.status(401).json({ error: 'Senha incorreta' });
     }

@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 async function main() {
   const roleAdmin = await prisma.role.upsert({
@@ -14,8 +14,8 @@ async function main() {
   if (!existingUser) {
     const admin = await prisma.user.create({
       data: {
-        username: 'Administrador',
-        password: 'admin123', 
+        username: 'admin',
+        password: await Bun.password.hash('admin123', 'bcrypt'),
         roleId: roleAdmin.id,
         status: 'approved',
       },
@@ -26,4 +26,4 @@ async function main() {
   }
 }
 
-main().finally(() => prisma.$disconnect());
+  main().finally(() => prisma.$disconnect());
