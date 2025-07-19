@@ -7,7 +7,7 @@ app.get('/', (_req, res) => {
   res.send('API do agendamento online está no ar');
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
