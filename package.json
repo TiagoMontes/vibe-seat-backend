@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "start:docker": "bun run scripts/start.ts",
+    "start:docker": "bun run src/scripts/start.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
