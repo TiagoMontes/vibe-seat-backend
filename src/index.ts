@@ -1,16 +1,16 @@
 import express from 'express';
 import { userRoutes } from '@/modules/user/user.routes';
 import { authRoutes } from '@/modules/auth/auth.routes';
-import { authenticateJWT } from '@/middleware/authMiddleware';
-import { approvalRoutes } from './modules/approvals/approvals.routes';
+import { approvalRoutes } from '@/modules/approval/approval.routes';
+import { chairRoutes } from '@/modules/chair/chair.routes';
 
 const app = express();
 app.use(express.json());
 
 app.use('/auth', authRoutes);
-app.use(authenticateJWT);
 app.use('/users', userRoutes);
 app.use('/approvals', approvalRoutes);
+app.use('/chairs', chairRoutes);
 
 
 app.get('/', (_req, res) => {

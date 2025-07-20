@@ -1,8 +1,10 @@
 import { Router } from "express";
-import { approvalController } from "@/modules/approvals/approvals.controller";
-import { isAdmin } from "@/middleware/authMiddleware";
+import { approvalController } from "@/modules/approval/approval.controller";
+import { authenticateJWT, isAdmin } from "@/middleware/authMiddleware";
 
 const router = Router();
+
+router.use(authenticateJWT, isAdmin);
 
 router.get("/", approvalController.getAllPendingApprovals);
 router.get("/:id", approvalController.getById);

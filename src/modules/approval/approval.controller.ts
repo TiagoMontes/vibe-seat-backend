@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { approvalService } from "@/modules/approvals/approvals.service";
+import { approvalService } from "@/modules/approval/approval.service";
 
 export const approvalController = {
 	async getAllPendingApprovals(req: Request, res: Response) {
