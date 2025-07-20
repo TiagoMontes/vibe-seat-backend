@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { appointmentController } from './appointment.controller';
-import { isAdmin } from '@/middleware/authMiddleware';
+import { authenticateJWT, isAdmin } from '@/middleware/authMiddleware';
 
 const router = Router();
+
+router.use(authenticateJWT);
 
 // Usuário cria e lista os próprios
 router.post('/', appointmentController.create);

@@ -6,7 +6,7 @@ export const authService = {
   generateToken: (user: { id: number; username: string; role: string }) => {
     return jwt.sign(
       {
-        sub: user.id,
+        id: user.id,
         username: user.username,
         role: user.role,
       },

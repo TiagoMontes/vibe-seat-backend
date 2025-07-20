@@ -1,0 +1,92 @@
+config:
+  target: 'http://localhost:3001'
+  phases:
+    - duration: 30 # duração reduzida para teste completo
+      arrivalRate: 30 # usuários por segundo (reduzido para fluxo completo)
+scenarios:
+  - name: fluxo-completo-sistema
+    flow:
+      # 1. LOGIN
+      - post:
+          url: /auth/login
+          json:
+            username: Administrador
+            password: admin123
+
+      # # 2. LISTAR CADEIRAS
+      # - get:
+      #     url: /chairs
+      #     headers:
+      #       Authorization: 'Bearer {{ token }}'
+
+      # # 3. CRIAR NOVA CADEIRA
+      # - post:
+      #     url: /chairs/
+      #     headers:
+      #       Authorization: 'Bearer {{ token }}'
+      #     json:
+      #       name: 'Cadeira Teste {{ $randomString() }}'
+      #       description: 'Cadeira para testes de performance'
+      #       location: 'Sala {{ $randomInt(1, 100) }}'
+      #     capture:
+      #       - json: '$.id'
+      #         as: chairId
+
+      # # 4. LISTAR CONFIGURAÇÕES DE HORÁRIO
+      # - get:
+      #     url: /schedules/
+      #     headers:
+      #       Authorization: 'Bearer {{ token }}'
+
+      # # 5. CRIAR CONFIGURAÇÃO DE HORÁRIO
+      # - post:
+      #     url: /schedules/
+      #     headers:
+      #       Authorization: 'Bearer {{ token }}'
+      #     json:
+      #       chairId: '{{ chairId }}'
+      #       daysOfWeek: [1, 2, 3, 4, 5] # Segunda a sexta
+      #       timeStart: '09:00'
+      #       timeEnd: '17:00'
+      #       validFrom: '2024-01-01T00:00:00.000Z'
+      #       validTo: '2024-12-31T23:59:59.000Z'
+
+      # # 6. LISTAR AGENDAMENTOS
+      # - get:
+      #     url: /appointments/
+      #     headers:
+      #       Authorization: 'Bearer {{ token }}'
+
+      # # 7. CRIAR AGENDAMENTO
+      # - post:
+      #     url: /appointments/
+      #     headers:
+      #       Authorization: 'Bearer {{ token }}'
+      #     json:
+      #       chairId: '{{ chairId }}'
+      #       datetimeStart: '2024-12-01T10:00:00.000Z'
+      #       datetimeEnd: '2024-12-01T11:00:00.000Z'
+      #     capture:
+      #       - json: '$.id'
+      #         as: appointmentId
+
+      # # 8. LISTAR APROVAÇÕES PENDENTES
+      # - get:
+      #     url: /approvals/
+      #     headers:
+      #       Authorization: 'Bearer {{ token }}'
+
+      # # 9. CONFIRMAR PRESENÇA (ADMIN)
+      # - patch:
+      #     url: '/appointments/{{ appointmentId }}/confirm'
+      #     headers:
+      #       Authorization: 'Bearer {{ token }}'
+
+      # # 10. CANCELAR AGENDAMENTO
+      # - patch:
+      #     url: '/appointments/{{ appointmentId }}/cancel'
+      #     headers:
+      #       Authorization: 'Bearer {{ token }}'
+
+      # Pausa entre requisições
+      - think: 1
