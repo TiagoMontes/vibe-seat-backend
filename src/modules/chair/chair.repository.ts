@@ -2,10 +2,26 @@ import { prisma } from "@/lib/prisma";
 import type { ChairInput } from "@/modules/chair/types";
 
 export const chairRepository = {
-  create: (data: ChairInput) => prisma.chair.create({ data }),
-  findAll: () => prisma.chair.findMany(),
-  findById: (id: number) => prisma.chair.findUnique({ where: { id } }),
-  update: (id: number, data: Partial<ChairInput>) =>
-    prisma.chair.update({ where: { id }, data }),
-  delete: (id: number) => prisma.chair.delete({ where: { id } }),
+  create: async (data: ChairInput) => {
+    return await prisma.chair.create({ data });
+  },
+
+  findAll: async () => {
+    return await prisma.chair.findMany();
+  },
+
+  findById: async (id: number) => {
+    return await prisma.chair.findUnique({ where: { id } });
+  },
+
+  update: async (id: number, data: Partial<ChairInput>) => {
+    return await prisma.chair.update({
+      where: { id },
+      data,
+    });
+  },
+
+  delete: async (id: number) => {
+    return await prisma.chair.delete({ where: { id } });
+  },
 };
