@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import type { ChairInput } from "@/modules/chair/types";
+import { prisma } from '@/lib/prisma';
+import type { ChairInput } from '@/modules/chair/types';
 
 export const chairRepository = {
   create: async (data: ChairInput) => {

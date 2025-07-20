@@ -1,5 +1,4 @@
-import { prisma } from "@/lib/prisma";
-
+import { prisma } from '@/lib/prisma';
 
 export const userRepository = {
   create: async (data: {

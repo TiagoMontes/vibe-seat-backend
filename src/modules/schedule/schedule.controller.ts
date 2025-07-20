@@ -1,29 +1,25 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from 'express';
 import type {
   ScheduleConfigInput,
   ScheduleConfigUpdateInput,
-} from "@/modules/schedule/types";
-import { scheduleService } from "@/modules/schedule/schedule.service";
+} from '@/modules/schedule/types';
+import { scheduleService } from '@/modules/schedule/schedule.service';
 
 export const scheduleController = {
-	create: async (
-		req: Request<{}, {}, ScheduleConfigInput>,
-		res: Response,
-		next: NextFunction
-	) => {
-		try {
-				const created = await scheduleService.create(req.body);
-				return res.status(201).json(created);
-		} catch (err) {
-				next(err);
-		}
-	},
-
-  getAll: async (
-    _req: Request,
+  create: async (
+    req: Request<{}, {}, ScheduleConfigInput>,
     res: Response,
     next: NextFunction
   ) => {
+    try {
+      const created = await scheduleService.create(req.body);
+      return res.status(201).json(created);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  getAll: async (_req: Request, res: Response, next: NextFunction) => {
     try {
       const list = await scheduleService.getAll();
       return res.json(list);
@@ -51,10 +47,7 @@ export const scheduleController = {
     next: NextFunction
   ) => {
     try {
-      const cfg = await scheduleService.update(
-        Number(req.params.id),
-        req.body
-      );
+      const cfg = await scheduleService.update(Number(req.params.id), req.body);
       return res.json(cfg);
     } catch (err) {
       next(err);

@@ -8,16 +8,16 @@ export const userService = {
     if (existingUser) throw new Error('Username already taken');
 
     const hashed = await bcrypt.hash(password, 10);
-    
+
     // Criar usuário e approval em uma transação
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async tx => {
       // Criar o usuário
       const user = await tx.user.create({
         data: {
           username,
           password: hashed,
           roleId,
-        }
+        },
       });
 
       // Criar o approval automaticamente
@@ -25,8 +25,8 @@ export const userService = {
         data: {
           userId: user.id,
           requestedRoleId: roleId,
-          status: 'pending'
-        }
+          status: 'pending',
+        },
       });
 
       return user;

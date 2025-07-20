@@ -1,7 +1,11 @@
 import type { Request, Response, NextFunction } from 'express';
 import { authService } from '@/modules/auth/auth.service';
 
-export function authenticateJWT(req: Request, res: Response, next: NextFunction) {
+export function authenticateJWT(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -25,9 +29,9 @@ export function authenticateJWT(req: Request, res: Response, next: NextFunction)
 }
 
 export function isAdmin(req: Request, res: Response, next: NextFunction) {
-	const user = (req as any).user;
-	if (user?.role !== 'admin') {
-			return res.status(403).json({ message: 'Acesso negado' });
-	}
-	next();
+  const user = (req as any).user;
+  if (user?.role !== 'admin') {
+    return res.status(403).json({ message: 'Acesso negado' });
+  }
+  next();
 }

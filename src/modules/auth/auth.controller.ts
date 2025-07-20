@@ -13,10 +13,15 @@ export const authController = {
     });
 
     if (!user || user.status !== 'approved') {
-      return res.status(401).json({ error: 'Credenciais inválidas ou não aprovadas' });
+      return res
+        .status(401)
+        .json({ error: 'Credenciais inválidas ou não aprovadas' });
     }
 
-    const passwordMatch = await userService.verifyPassword(password, user.password);
+    const passwordMatch = await userService.verifyPassword(
+      password,
+      user.password
+    );
     if (!passwordMatch) {
       return res.status(401).json({ error: 'Senha incorreta' });
     }

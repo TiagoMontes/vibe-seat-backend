@@ -1,22 +1,19 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from '@/lib/prisma';
 import type {
   ScheduleConfigSingleInput,
   ScheduleConfigUpdateInput,
-} from "./types";
+} from './types';
 
 export const scheduleRepository = {
   create: (data: ScheduleConfigSingleInput) =>
     prisma.scheduleConfig.create({ data }),
 
-  findAll: () =>
-    prisma.scheduleConfig.findMany(),
+  findAll: () => prisma.scheduleConfig.findMany(),
 
-  findById: (id: number) =>
-    prisma.scheduleConfig.findUnique({ where: { id } }),
+  findById: (id: number) => prisma.scheduleConfig.findUnique({ where: { id } }),
 
   update: (id: number, data: ScheduleConfigUpdateInput) =>
     prisma.scheduleConfig.update({ where: { id }, data }),
 
-  remove: (id: number) =>
-    prisma.scheduleConfig.delete({ where: { id } }),
+  remove: (id: number) => prisma.scheduleConfig.delete({ where: { id } }),
 };

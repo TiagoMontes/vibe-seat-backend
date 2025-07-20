@@ -1,6 +1,6 @@
-import type { Request, Response, NextFunction } from "express";
-import { appointmentService } from "./appointment.service";
-import type { AppointmentInput } from "./types";
+import type { Request, Response, NextFunction } from 'express';
+import { appointmentService } from './appointment.service';
+import type { AppointmentInput } from './types';
 
 export const appointmentController = {
   // POST /agendamentos

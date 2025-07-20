@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from '@/lib/prisma';
 
 async function main() {
   const roleAdmin = await prisma.role.upsert({
@@ -26,4 +26,4 @@ async function main() {
   }
 }
 
-  main().finally(() => prisma.$disconnect());
+main().finally(() => prisma.$disconnect());
