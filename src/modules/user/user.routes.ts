@@ -4,9 +4,9 @@ import { authenticateJWT } from '@/middleware/authMiddleware';
 
 const router = Router();
 
-router.use(authenticateJWT);
-
 router.post('/', userController.create);
+
+router.use(authenticateJWT);
 router.get('/', userController.getAll);
 router.get('/:id', userController.getById);
 router.delete('/:id', userController.delete);
