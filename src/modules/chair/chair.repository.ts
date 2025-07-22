@@ -39,9 +39,9 @@ export const chairRepository = {
     if (search) {
       const searchTerm = search.trim();
       where.OR = [
-        { name: { contains: searchTerm, mode: 'insensitive' } },
-        { description: { contains: searchTerm, mode: 'insensitive' } },
-        { location: { contains: searchTerm, mode: 'insensitive' } },
+        { name: { contains: searchTerm } },
+        { description: { contains: searchTerm } },
+        { location: { contains: searchTerm } },
       ];
     }
 
@@ -84,9 +84,9 @@ export const chairRepository = {
     if (search) {
       const searchTerm = search.trim();
       where.OR = [
-        { name: { contains: searchTerm, mode: 'insensitive' } },
-        { description: { contains: searchTerm, mode: 'insensitive' } },
-        { location: { contains: searchTerm, mode: 'insensitive' } },
+        { name: { contains: searchTerm } },
+        { description: { contains: searchTerm } },
+        { location: { contains: searchTerm } },
       ];
     }
 
@@ -106,9 +106,9 @@ export const chairRepository = {
     if (search) {
       const searchTerm = search.trim();
       where.OR = [
-        { name: { contains: searchTerm, mode: 'insensitive' } },
-        { description: { contains: searchTerm, mode: 'insensitive' } },
-        { location: { contains: searchTerm, mode: 'insensitive' } },
+        { name: { contains: searchTerm } },
+        { description: { contains: searchTerm } },
+        { location: { contains: searchTerm } },
       ];
     }
 
