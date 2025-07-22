@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import type { ChairInput } from '@/modules/chair/types';
+import type { ChairInput, ChairFilters, ChairStats } from '@/modules/chair/types';
 
 export const chairRepository = {
   create: async (data: ChairInput) => {
@@ -23,5 +23,133 @@ export const chairRepository = {
 
   delete: async (id: number) => {
     return await prisma.chair.delete({ where: { id } });
+  },
+
+  findManyWithPagination: async (filters: ChairFilters) => {
+    const { page, limit, search, status, sortBy } = filters;
+    const offset = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+    
+    if (status) {
+      where.status = status;
+    }
+
+    if (search) {
+      const searchTerm = search.trim();
+      where.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+        { location: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
+
+    // Build orderBy clause
+    let orderBy: any = {};
+    switch (sortBy) {
+      case 'newest':
+        orderBy = { createdAt: 'desc' };
+        break;
+      case 'oldest':
+        orderBy = { createdAt: 'asc' };
+        break;
+      case 'name-asc':
+        orderBy = { name: 'asc' };
+        break;
+      case 'name-desc':
+        orderBy = { name: 'desc' };
+        break;
+      default:
+        orderBy = { createdAt: 'desc' };
+    }
+
+    return await prisma.chair.findMany({
+      where,
+      orderBy,
+      skip: offset,
+      take: limit,
+    });
+  },
+
+  countWithFilters: async (filters: Pick<ChairFilters, 'search' | 'status'>) => {
+    const { search, status } = filters;
+
+    const where: any = {};
+    
+    if (status) {
+      where.status = status;
+    }
+
+    if (search) {
+      const searchTerm = search.trim();
+      where.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+        { location: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
+
+    return await prisma.chair.count({ where });
+  },
+
+  getStatsWithFilters: async (filters: Pick<ChairFilters, 'search' | 'status'>): Promise<ChairStats> => {
+    const { search, status } = filters;
+
+    // Build the same where clause as other methods
+    const where: any = {};
+    
+    if (status) {
+      where.status = status;
+    }
+
+    if (search) {
+      const searchTerm = search.trim();
+      where.OR = [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+        { location: { contains: searchTerm, mode: 'insensitive' } },
+      ];
+    }
+
+    // Use Prisma aggregation to get statistics in a single query
+    const stats = await prisma.chair.groupBy({
+      by: ['status'],
+      where,
+      _count: {
+        status: true,
+      },
+    });
+
+    // Initialize counters
+    let total = 0;
+    let active = 0;
+    let maintenance = 0;
+    let inactive = 0;
+
+    // Process the results
+    stats.forEach((stat) => {
+      const count = stat._count.status;
+      total += count;
+      
+      switch (stat.status) {
+        case 'ACTIVE':
+          active = count;
+          break;
+        case 'MAINTENANCE':
+          maintenance = count;
+          break;
+        case 'INACTIVE':
+          inactive = count;
+          break;
+      }
+    });
+
+    return {
+      total,
+      active,
+      maintenance,
+      inactive,
+    };
   },
 };
