@@ -16,4 +16,6 @@ export const scheduleRepository = {
     prisma.scheduleConfig.update({ where: { id }, data }),
 
   remove: (id: number) => prisma.scheduleConfig.delete({ where: { id } }),
+
+  removeMany: (ids: number[]) => prisma.scheduleConfig.deleteMany({ where: { id: { in: ids } } }),
 };

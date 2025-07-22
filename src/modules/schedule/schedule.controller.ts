@@ -60,10 +60,37 @@ export const scheduleController = {
     next: NextFunction
   ) => {
     try {
-      await scheduleService.remove(Number(req.params.id));
-      return res.status(204).send();
+      const id = Number(req.params.id);
+      await scheduleService.remove(id);
+      return res.status(200).json({
+        message: 'Disponibilidade removida com sucesso',
+        deletedId: id
+      });
     } catch (err) {
       next(err);
+    } 
+  },
+
+  deleteMany: async (req: Request<{}, {}, { ids: number[] }>, res: Response) => {
+    try {
+      const { ids } = req.body;
+      
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({
+          message: 'Campo "ids" é obrigatório e deve ser um array não vazio'
+        });
+      }
+
+      await scheduleService.removeMany(ids);
+      return res.status(200).json({ 
+        message: 'Disponibilidades removidas com sucesso',
+        deletedIds: ids,
+        count: ids.length
+      });
+    } catch (error) {
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : 'Erro interno' 
+      });
     }
   },
 };

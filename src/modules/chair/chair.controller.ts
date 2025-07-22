@@ -82,6 +82,9 @@ export const chairController = {
   delete: async (req: Request<{ id: string }>, res: Response) => {
     const id = Number(req.params.id);
     await chairService.delete(id);
-    return res.status(204).send();
+    return res.status(200).json({
+      message: 'Cadeira excluída com sucesso',
+      deletedId: id
+    });
   },
 };

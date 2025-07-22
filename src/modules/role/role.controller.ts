@@ -77,7 +77,10 @@ export const roleController = {
       }
 
       await roleService.delete(id);
-      return res.status(204).send();
+      return res.status(200).json({
+        message: 'Role excluída com sucesso',
+        deletedId: id
+      });
     } catch (err: any) {
       if (err.message === 'Role não encontrada') {
         return res.status(404).json({ error: err.message });

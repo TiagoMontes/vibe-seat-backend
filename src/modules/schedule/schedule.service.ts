@@ -87,4 +87,8 @@ export const scheduleService = {
     await scheduleService.getById(id);
     return scheduleRepository.remove(id);
   },
+
+  removeMany: async (ids: number[]) => {
+    return scheduleRepository.removeMany(ids);
+  },
 };

@@ -24,7 +24,11 @@ export const userController = {
   },
 
   delete: async (req: Request, res: Response) => {
-    await userService.delete(Number(req.params.id));
-    res.status(204).send();
+    const id = Number(req.params.id);
+    await userService.delete(id);
+    return res.status(200).json({
+      message: 'Usuário excluído com sucesso',
+      deletedId: id
+    });
   },
 };
