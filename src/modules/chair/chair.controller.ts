@@ -53,8 +53,8 @@ export const chairController = {
         return res.json(result);
       } else {
         // Maintain backward compatibility - return all chairs without pagination
-        const result = await chairService.getAll();
-        return res.json(result);
+    const result = await chairService.getAll();
+    return res.json(result);
       }
     } catch (error) {
       return res.status(500).json({ 

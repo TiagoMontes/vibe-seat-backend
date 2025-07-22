@@ -10,6 +10,9 @@ router.use(authenticateJWT);
 router.post('/', appointmentController.create);
 router.get('/', appointmentController.getAll);
 
+// Buscar horários disponíveis (antes das rotas com parâmetros)
+router.get('/available-times', appointmentController.getAvailableTimes);
+
 // Cancelamento (usuário ou admin)
 router.patch('/:id/cancel', appointmentController.cancel);
 

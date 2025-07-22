@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import type { AppointmentStatus } from '@prisma/client';
+import type { AppointmentFilters, AppointmentStats } from './types';
 
 export const appointmentRepository = {
   // Cria agendamento
@@ -42,4 +43,193 @@ export const appointmentRepository = {
     id: number,
     data: Partial<{ status: AppointmentStatus; presenceConfirmed: boolean }>
   ) => prisma.appointment.update({ where: { id }, data }),
+
+  // Busca horários ocupados de todas as cadeiras em uma data específica
+  findBookedTimes: async (date: string) => {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return await prisma.appointment.findMany({
+      where: {
+        status: {
+          in: ['SCHEDULED', 'CONFIRMED'] // Inclui agendamentos confirmados e agendados
+        },
+        datetimeStart: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      select: {
+        chairId: true,
+        datetimeStart: true,
+        datetimeEnd: true,
+      },
+      orderBy: {
+        datetimeStart: 'asc',
+      },
+    });
+  },
+
+  // Pagination methods
+  findManyWithPagination: async (filters: AppointmentFilters) => {
+    const { page, limit, search, status, sortBy, userId } = filters;
+    const offset = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+    
+    if (status) {
+      where.status = status;
+    }
+
+    if (userId) {
+      where.userId = userId;
+    }
+
+    if (search) {
+      const searchTerm = search.trim();
+      where.OR = [
+        { user: { username: { contains: searchTerm } } },
+        { chair: { name: { contains: searchTerm } } },
+        { chair: { location: { contains: searchTerm } } },
+      ];
+    }
+
+    // Build orderBy clause
+    let orderBy: any = {};
+    switch (sortBy) {
+      case 'newest':
+        orderBy = { createdAt: 'desc' };
+        break;
+      case 'oldest':
+        orderBy = { createdAt: 'asc' };
+        break;
+      case 'datetime-asc':
+        orderBy = { datetimeStart: 'asc' };
+        break;
+      case 'datetime-desc':
+        orderBy = { datetimeStart: 'desc' };
+        break;
+      default:
+        orderBy = { createdAt: 'desc' };
+    }
+
+    return await prisma.appointment.findMany({
+      where,
+      orderBy,
+      skip: offset,
+      take: limit,
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        chair: {
+          select: {
+            id: true,
+            name: true,
+            location: true,
+          },
+        },
+      },
+    });
+  },
+
+  countWithFilters: async (filters: Pick<AppointmentFilters, 'search' | 'status' | 'userId'>) => {
+    const { search, status, userId } = filters;
+
+    const where: any = {};
+    
+    if (status) {
+      where.status = status;
+    }
+
+    if (userId) {
+      where.userId = userId;
+    }
+
+    if (search) {
+      const searchTerm = search.trim();
+      where.OR = [
+        { user: { username: { contains: searchTerm } } },
+        { chair: { name: { contains: searchTerm } } },
+        { chair: { location: { contains: searchTerm } } },
+      ];
+    }
+
+    return await prisma.appointment.count({ where });
+  },
+
+  getStatsWithFilters: async (filters: Pick<AppointmentFilters, 'search' | 'status' | 'userId'>): Promise<AppointmentStats> => {
+    const { search, status, userId } = filters;
+
+    // Build WHERE conditions using AND array structure
+    const whereConditions: any[] = [];
+    
+    if (status) {
+      whereConditions.push({ status });
+    }
+
+    if (userId) {
+      whereConditions.push({ userId });
+    }
+
+    if (search) {
+      const searchTerm = search.trim();
+      whereConditions.push({
+        OR: [
+          { user: { username: { contains: searchTerm } } },
+          { chair: { name: { contains: searchTerm } } },
+          { chair: { location: { contains: searchTerm } } },
+        ]
+      });
+    }
+
+    const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
+
+    // Use Prisma aggregation to get statistics in a single query
+    const stats = await prisma.appointment.groupBy({
+      by: ['status'],
+      where,
+      _count: {
+        status: true,
+      },
+    });
+
+    // Initialize counters
+    let total = 0;
+    let scheduled = 0;
+    let cancelled = 0;
+    let confirmed = 0;
+
+    // Process the results
+    stats.forEach((stat) => {
+      const count = stat._count.status;
+      total += count;
+      
+      switch (stat.status) {
+        case 'SCHEDULED':
+          scheduled = count;
+          break;
+        case 'CANCELLED':
+          cancelled = count;
+          break;
+        case 'CONFIRMED':
+          confirmed = count;
+          break;
+      }
+    });
+
+    return {
+      total,
+      scheduled,
+      cancelled,
+      confirmed,
+    };
+  },
 };

@@ -68,7 +68,7 @@ export const scheduleController = {
       });
     } catch (err) {
       next(err);
-    } 
+    }
   },
 
   deleteMany: async (req: Request<{}, {}, { ids: number[] }>, res: Response) => {
