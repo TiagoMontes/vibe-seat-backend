@@ -10,6 +10,12 @@ router.use(authenticateJWT);
 router.post('/', appointmentController.create);
 router.get('/', appointmentController.getAll);
 
+// Buscar agendamentos do usuário logado
+router.get('/my-appointments', appointmentController.getMyAppointments);
+
+// Buscar todos os agendamentos (para filtrar no frontend)
+router.get('/allStatus', appointmentController.getScheduledAppointments);
+
 // Buscar horários disponíveis (antes das rotas com parâmetros)
 router.get('/available-times', appointmentController.getAvailableTimes);
 

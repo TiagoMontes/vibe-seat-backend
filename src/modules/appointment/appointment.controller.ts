@@ -84,6 +84,38 @@ export const appointmentController = {
     }
   },
 
+  // GET /agendamentos/my-appointments
+  getMyAppointments: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = (req as any).user;
+      const appointments = await appointmentService.getMyAppointments(user.id);
+      
+      return res.json({
+        appointments,
+        total: appointments.length,
+        message: 'Agendamentos do usuário logado'
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // GET /agendamentos/scheduled
+  getScheduledAppointments: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const user = (req as any).user;
+      const appointments = await appointmentService.getScheduledAppointments(user.id, user.role);
+      
+      return res.json({
+        appointments,
+        total: appointments.length,
+        message: 'Todos os agendamentos'
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
   // GET /agendamentos/available-times
   getAvailableTimes: async (req: Request<{}, {}, {}, { date: string; page?: string; limit?: string }>, res: Response, next: NextFunction) => {
     try {

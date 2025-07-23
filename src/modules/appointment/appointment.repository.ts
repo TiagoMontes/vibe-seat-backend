@@ -14,9 +14,93 @@ export const appointmentRepository = {
   // Busca todos (admin)
   findAll: () => prisma.appointment.findMany(),
 
+  // Busca todos com detalhes (admin)
+  findAllWithDetails: () =>
+    prisma.appointment.findMany({ 
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        chair: {
+          select: {
+            id: true,
+            name: true,
+            location: true,
+          },
+        },
+      },
+      orderBy: {
+        datetimeStart: 'desc', // Mais recentes primeiro
+      },
+    }),
+
   // Busca por usuário
   findByUser: (userId: number) =>
-    prisma.appointment.findMany({ where: { userId } }),
+    prisma.appointment.findMany({ 
+      where: { userId },
+      include: {
+        chair: {
+          select: {
+            id: true,
+            name: true,
+            location: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc', // Mais novo primeiro (último criado)
+      },
+    }),
+
+  // Busca agendamentos SCHEDULED (admin vê todos)
+  findScheduled: () =>
+    prisma.appointment.findMany({ 
+      where: { status: 'SCHEDULED' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+          },
+        },
+        chair: {
+          select: {
+            id: true,
+            name: true,
+            location: true,
+          },
+        },
+      },
+      orderBy: {
+        datetimeStart: 'asc', // Ordena por data/hora do agendamento
+      },
+    }),
+
+  // Busca agendamentos SCHEDULED do usuário
+  findScheduledByUser: (userId: number) =>
+    prisma.appointment.findMany({ 
+      where: { 
+        userId,
+        status: 'SCHEDULED'
+      },
+      include: {
+        chair: {
+          select: {
+            id: true,
+            name: true,
+            location: true,
+          },
+        },
+      },
+      orderBy: {
+        datetimeStart: 'asc', // Ordena por data/hora do agendamento
+      },
+    }),
+
+
 
   // Busca conflitos (cadeira OU usuário)
   findConflicts: (chairId: number, userId: number, start: Date, end: Date) =>

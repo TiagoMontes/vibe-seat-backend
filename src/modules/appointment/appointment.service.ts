@@ -56,6 +56,19 @@ export const appointmentService = {
     return appointmentRepository.findByUser(userId);
   },
 
+  // 2.1) Listar agendamentos do usuário logado (sempre apenas os seus)
+  getMyAppointments: async (userId: number) => {
+    return appointmentRepository.findByUser(userId);
+  },
+
+  // 2.2) Listar todos os agendamentos (para filtrar no frontend)
+  getScheduledAppointments: async (userId: number, role: string) => {
+    if (role === 'admin') {
+      return appointmentRepository.findAllWithDetails();
+    }
+    return appointmentRepository.findByUser(userId);
+  },
+
   // 2.1) Listar agendamentos com paginação
   getAllWithPagination: async (filters: AppointmentFilters, currentUserId: number, userRole: string): Promise<AppointmentWithPagination> => {
     // If not admin, force userId filter to current user
