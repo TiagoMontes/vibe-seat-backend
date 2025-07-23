@@ -6,6 +6,7 @@ import { chairRoutes } from '@/modules/chair/chair.routes';
 import { scheduleRoutes } from './modules/schedule/schedule.routes';
 import { appointmentRoutes } from './modules/appointment/appointment.routes';
 import { roleRoutes } from './modules/role/role.routes';
+import { dashboardRoutes } from './modules/dashboard/dashboard.routes';
 
 const app = express();
 app.use(express.json());
@@ -17,6 +18,7 @@ app.use('/chairs', chairRoutes);
 app.use('/schedules', scheduleRoutes);
 app.use('/appointments', appointmentRoutes);
 app.use('/roles', roleRoutes);
+app.use('/dashboard', dashboardRoutes);
 
 app.get('/', (_req, res) => {
   res.send('API do agendamento online está no ar');
