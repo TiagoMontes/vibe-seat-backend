@@ -80,11 +80,18 @@ export const chairController = {
   },
 
   delete: async (req: Request<{ id: string }>, res: Response) => {
-    const id = Number(req.params.id);
-    await chairService.delete(id);
-    return res.status(200).json({
-      message: 'Cadeira excluída com sucesso',
-      deletedId: id
-    });
+    try {
+      const id = Number(req.params.id);
+      await chairService.delete(id);
+      return res.status(200).json({
+        message: 'Cadeira excluída com sucesso',
+        deletedId: id
+      });
+    } catch (error) {
+      return res.status(400).json({
+        message: error instanceof Error ? error.message : 'Erro ao excluir cadeira',
+        error: true
+      });
+    }
   },
 };

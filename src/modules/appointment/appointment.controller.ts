@@ -90,11 +90,27 @@ export const appointmentController = {
       const user = (req as any).user;
       const appointments = await appointmentService.getMyAppointments(user.id);
       
-      return res.json({
-        appointments,
-        total: appointments.length,
-        message: 'Agendamentos do usuário logado'
-      });
+      // Calcular contagens por status
+      const scheduled = appointments.filter(apt => apt.status === 'SCHEDULED').length;
+      const cancelled = appointments.filter(apt => apt.status === 'CANCELLED').length;
+      
+      // Separar agendamentos confirmados por data
+      const now = new Date();
+      const confirmedAppointments = appointments.filter(apt => apt.status === 'CONFIRMED');
+      const confirmedUpcoming = confirmedAppointments.filter(apt => new Date(apt.datetimeStart) > now).length;
+      const confirmedDone = confirmedAppointments.filter(apt => new Date(apt.datetimeStart) <= now).length;
+      const confirmed = confirmedAppointments.length; // Total de confirmados
+      
+              return res.json({
+          appointments,
+          total: appointments.length,
+          scheduled,
+          confirmed,
+          confirmedUpcoming,
+          confirmedDone,
+          cancelled,
+          message: 'Agendamentos do usuário logado'
+        });
     } catch (err) {
       next(err);
     }

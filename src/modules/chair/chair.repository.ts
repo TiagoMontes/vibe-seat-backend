@@ -22,6 +22,15 @@ export const chairRepository = {
   },
 
   delete: async (id: number) => {
+    // Verificar se existem agendamentos relacionados
+    const appointmentsCount = await prisma.appointment.count({
+      where: { chairId: id }
+    });
+
+    if (appointmentsCount > 0) {
+      throw new Error(`Não é possível deletar a cadeira. Existem ${appointmentsCount} agendamento(s) relacionados a esta cadeira.`);
+    }
+
     return await prisma.chair.delete({ where: { id } });
   },
 
