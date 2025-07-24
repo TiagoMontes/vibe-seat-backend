@@ -311,7 +311,7 @@ Lista todas as aprovações com paginação opcional.
 
 - `page` - Número da página (padrão: 1)
 - `limit` - Itens por página (padrão: 9, máximo: 50)
-- `search` - Buscar por username, email ou nome do role
+- `search` - Buscar por username ou nome do role
 - `status` - Filtrar por status: `pending`, `approved`, `rejected`
 - `sortBy` - Ordenação: `newest`, `oldest`, `user-asc`, `user-desc`
 

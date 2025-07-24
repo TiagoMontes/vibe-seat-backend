@@ -462,7 +462,7 @@
                 {
                   "key": "search",
                   "value": "admin",
-                  "description": "Buscar por username, email ou nome do role"
+                  "description": "Buscar por username ou nome do role"
                 },
                 {
                   "key": "status",

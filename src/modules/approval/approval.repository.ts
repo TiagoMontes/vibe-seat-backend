@@ -24,7 +24,6 @@ export const approvalRepository = {
       const searchTerm = search.trim();
       where.OR = [
         { user: { username: { contains: searchTerm } } },
-        { user: { email: { contains: searchTerm } } },
         { requestedRole: { name: { contains: searchTerm } } },
       ];
     }
@@ -95,7 +94,6 @@ export const approvalRepository = {
       const searchTerm = search.trim();
       where.OR = [
         { user: { username: { contains: searchTerm } } },
-        { user: { email: { contains: searchTerm } } },
         { requestedRole: { name: { contains: searchTerm } } },
       ];
     }
@@ -116,7 +114,6 @@ export const approvalRepository = {
       const searchTerm = search.trim();
       where.OR = [
         { user: { username: { contains: searchTerm } } },
-        { user: { email: { contains: searchTerm } } },
         { requestedRole: { name: { contains: searchTerm } } },
       ];
     }
