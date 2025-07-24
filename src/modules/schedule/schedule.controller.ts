@@ -2,8 +2,48 @@ import type { Request, Response, NextFunction } from 'express';
 import type {
   ScheduleConfigInput,
   ScheduleConfigUpdateInput,
+  ScheduleQueryParams,
+  ScheduleFilters,
 } from '@/modules/schedule/types';
 import { scheduleService } from '@/modules/schedule/schedule.service';
+
+const validateAndParseQueryParams = (query: ScheduleQueryParams): ScheduleFilters => {
+  // Parse and validate page
+  let page = parseInt(query.page || '1', 10);
+  if (isNaN(page) || page < 1) {
+    page = 1;
+  }
+
+  // Parse and validate limit
+  let limit = parseInt(query.limit || '9', 10);
+  if (isNaN(limit) || limit < 1 || limit > 50) {
+    limit = 9;
+  }
+
+  // Validate dayOfWeek
+  let dayOfWeek: number | undefined;
+  if (query.dayOfWeek) {
+    dayOfWeek = parseInt(query.dayOfWeek, 10);
+    if (isNaN(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
+      dayOfWeek = undefined;
+    }
+  }
+
+  // Validate sortBy
+  const validSortOptions = ['newest', 'oldest', 'time-asc', 'time-desc'];
+  const sortBy = query.sortBy && validSortOptions.includes(query.sortBy) ? query.sortBy : 'newest';
+
+  // Sanitize search
+  const search = query.search ? query.search.trim() : undefined;
+
+  return {
+    page,
+    limit,
+    search,
+    dayOfWeek,
+    sortBy,
+  };
+};
 
 export const scheduleController = {
   create: async (
@@ -19,10 +59,21 @@ export const scheduleController = {
     }
   },
 
-  getAll: async (_req: Request, res: Response, next: NextFunction) => {
+  getAll: async (req: Request<{}, {}, {}, ScheduleQueryParams>, res: Response, next: NextFunction) => {
     try {
-      const list = await scheduleService.getAll();
-      return res.json(list);
+      // Check if any pagination/filter parameters are provided
+      const hasQueryParams = Object.keys(req.query).length > 0;
+
+      if (hasQueryParams) {
+        // Use pagination when query parameters are present
+        const filters = validateAndParseQueryParams(req.query);
+        const result = await scheduleService.getAllWithPagination(filters);
+        return res.json(result);
+      } else {
+        // Maintain backward compatibility - return all schedules without pagination
+        const list = await scheduleService.getAll();
+        return res.json(list);
+      }
     } catch (err) {
       next(err);
     }

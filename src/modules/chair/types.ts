@@ -35,6 +35,9 @@ export interface PaginationMeta {
   itemsPerPage: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+  nextPage: number | null;
+  prevPage: number | null;
+  lastPage: number;
 }
 
 export interface ChairStats {

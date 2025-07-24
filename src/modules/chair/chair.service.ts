@@ -38,6 +38,9 @@ export const chairService = {
     const totalPages = Math.ceil(totalItems / filters.limit);
     const hasNextPage = filters.page < totalPages;
     const hasPrevPage = filters.page > 1;
+    const nextPage = hasNextPage ? filters.page + 1 : null;
+    const prevPage = hasPrevPage ? filters.page - 1 : null;
+    const lastPage = totalPages;
 
     const pagination: PaginationMeta = {
       currentPage: filters.page,
@@ -46,6 +49,9 @@ export const chairService = {
       itemsPerPage: filters.limit,
       hasNextPage,
       hasPrevPage,
+      nextPage,
+      prevPage,
+      lastPage,
     };
 
     return {

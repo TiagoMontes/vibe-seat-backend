@@ -2,6 +2,9 @@ import type {
   ScheduleConfigInput,
   ScheduleConfigSingleInput,
   ScheduleConfigUpdateInput,
+  ScheduleFilters,
+  ScheduleWithPagination,
+  PaginationMeta,
 } from './types';
 import { scheduleRepository } from './schedule.repository';
 
@@ -71,6 +74,47 @@ export const scheduleService = {
   },
 
   getAll: () => scheduleRepository.findAll(),
+
+  getAllWithPagination: async (filters: ScheduleFilters): Promise<ScheduleWithPagination> => {
+    // Execute all queries in parallel for better performance
+    const [schedules, totalItems, stats] = await Promise.all([
+      scheduleRepository.findManyWithPagination(filters),
+      scheduleRepository.countWithFilters({
+        search: filters.search,
+        dayOfWeek: filters.dayOfWeek,
+      }),
+      scheduleRepository.getStatsWithFilters({
+        search: filters.search,
+        dayOfWeek: filters.dayOfWeek,
+      }),
+    ]);
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalItems / filters.limit);
+    const hasNextPage = filters.page < totalPages;
+    const hasPrevPage = filters.page > 1;
+    const nextPage = hasNextPage ? filters.page + 1 : null;
+    const prevPage = hasPrevPage ? filters.page - 1 : null;
+    const lastPage = totalPages;
+
+    const pagination: PaginationMeta = {
+      currentPage: filters.page,
+      totalPages,
+      totalItems,
+      itemsPerPage: filters.limit,
+      hasNextPage,
+      hasPrevPage,
+      nextPage,
+      prevPage,
+      lastPage,
+    };
+
+    return {
+      schedules,
+      pagination,
+      stats,
+    };
+  },
 
   getById: async (id: number) => {
     const cfg = await scheduleRepository.findById(id);

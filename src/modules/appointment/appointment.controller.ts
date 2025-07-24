@@ -10,7 +10,7 @@ const validateAndParseQueryParams = (query: AppointmentQueryParams): Appointment
   }
 
   // Parse and validate limit
-  let limit = parseInt(query.limit || '9', 10);
+  let limit = parseInt(query.limit || '3', 3);
   if (isNaN(limit) || limit < 1 || limit > 50) {
     limit = 9;
   }
@@ -153,7 +153,7 @@ export const appointmentController = {
 
       // Parse pagination parameters
       const pageNumber = parseInt(page || '1', 10);
-      const limitNumber = parseInt(limit || '9', 10);
+      const limitNumber = parseInt(limit || '3', 10);
 
       // Validate pagination parameters
       if (isNaN(pageNumber) || pageNumber < 1) {

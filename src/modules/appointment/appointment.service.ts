@@ -95,6 +95,9 @@ export const appointmentService = {
     const totalPages = Math.ceil(totalItems / filters.limit);
     const hasNextPage = filters.page < totalPages;
     const hasPrevPage = filters.page > 1;
+    const nextPage = hasNextPage ? filters.page + 1 : null;
+    const prevPage = hasPrevPage ? filters.page - 1 : null;
+    const lastPage = totalPages;
 
     const pagination: PaginationMeta = {
       currentPage: filters.page,
@@ -103,6 +106,9 @@ export const appointmentService = {
       itemsPerPage: filters.limit,
       hasNextPage,
       hasPrevPage,
+      nextPage,
+      prevPage,
+      lastPage,
     };
 
     return {
@@ -117,14 +123,6 @@ export const appointmentService = {
     // 1. Buscar configurações de horário para o dia da semana
     const targetDate = new Date(date);
     const dayOfWeek = targetDate.getDay();
-    
-    console.log('🔍 Debug - Buscando horários para cadeiras na data:', {
-      date,
-      targetDate: targetDate.toISOString(),
-      dayOfWeek,
-      page,
-      limit
-    });
     
     // 2. Buscar todas as cadeiras ativas com paginação
     const offset = (page - 1) * limit;
@@ -151,10 +149,7 @@ export const appointmentService = {
         }
       })
     ]);
-    
-    console.log('🪑 Cadeiras encontradas (página atual):', allChairs.length);
-    console.log('🪑 Total de cadeiras ativas:', totalChairs);
-    
+
     // 3. Buscar configurações de horário para o dia
     const scheduleConfigs = await prisma.scheduleConfig.findMany({
       where: {
@@ -167,18 +162,26 @@ export const appointmentService = {
       },
     });
 
-    console.log('📅 Configurações encontradas:', scheduleConfigs.length);
-
     if (scheduleConfigs.length === 0) {
+      const totalPages = Math.ceil(totalChairs / limit);
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+      const nextPage = hasNextPage ? page + 1 : null;
+      const prevPage = hasPrevPage ? page - 1 : null;
+      const lastPage = totalPages;
+      
       return { 
         chairs: [],
         pagination: {
           currentPage: page,
-          totalPages: Math.ceil(totalChairs / limit),
+          totalPages,
           totalItems: totalChairs,
           itemsPerPage: limit,
-          hasNextPage: page < Math.ceil(totalChairs / limit),
-          hasPrevPage: page > 1
+          hasNextPage,
+          hasPrevPage,
+          nextPage,
+          prevPage,
+          lastPage,
         },
         totalSlots: 0,
         bookedSlots: 0,
@@ -188,8 +191,6 @@ export const appointmentService = {
 
     // 4. Buscar horários já ocupados de todas as cadeiras
     const bookedTimes = await appointmentRepository.findBookedTimes(date);
-    
-    console.log('📋 Horários ocupados encontrados:', bookedTimes.length);
 
     // 5. Gerar todos os horários possíveis baseados nas configurações
     const allPossibleTimes: string[] = [];
@@ -208,8 +209,6 @@ export const appointmentService = {
         currentTime.setMinutes(currentTime.getMinutes() + APPOINTMENT_DURATION_MINUTES);
       }
     }
-
-    console.log('📊 Total de slots possíveis:', allPossibleTimes.length);
 
     // 6. Organizar horários ocupados por cadeira
     const bookedTimesByChair: { [chairId: number]: string[] } = {};
@@ -252,22 +251,25 @@ export const appointmentService = {
     const totalBookedSlots = bookedTimes.length;
     const totalAvailableSlots = (allPossibleTimes.length * allChairs.length) - totalBookedSlots;
 
-    console.log('✅ Resultado final:', {
-      chairsInPage: chairsAvailability.length,
-      totalChairs,
-      totalSlots: allPossibleTimes.length,
-      totalBookedSlots
-    });
+    const totalPages = Math.ceil(totalChairs / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+    const nextPage = hasNextPage ? page + 1 : null;
+    const prevPage = hasPrevPage ? page - 1 : null;
+    const lastPage = totalPages;
 
     return {
       chairs: chairsAvailability,
       pagination: {
         currentPage: page,
-        totalPages: Math.ceil(totalChairs / limit),
+        totalPages,
         totalItems: totalChairs,
         itemsPerPage: limit,
-        hasNextPage: page < Math.ceil(totalChairs / limit),
-        hasPrevPage: page > 1
+        hasNextPage,
+        hasPrevPage,
+        nextPage,
+        prevPage,
+        lastPage,
       },
       totalSlots: allPossibleTimes.length,
       bookedSlots: totalBookedSlots,

@@ -1,6 +1,7 @@
 import { userRepository } from '@/modules/user/user.repository';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import type { UserFilters, UserWithPagination, PaginationMeta } from './types';
 
 export const userService = {
   create: async (username: string, password: string, roleId: number) => {
@@ -40,6 +41,49 @@ export const userService = {
   },
 
   getAll: () => userRepository.findAll(),
+
+  getAllWithPagination: async (filters: UserFilters): Promise<UserWithPagination> => {
+    // Execute all queries in parallel for better performance
+    const [users, totalItems, stats] = await Promise.all([
+      userRepository.findManyWithPagination(filters),
+      userRepository.countWithFilters({
+        search: filters.search,
+        status: filters.status,
+        roleId: filters.roleId,
+      }),
+      userRepository.getStatsWithFilters({
+        search: filters.search,
+        status: filters.status,
+        roleId: filters.roleId,
+      }),
+    ]);
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalItems / filters.limit);
+    const hasNextPage = filters.page < totalPages;
+    const hasPrevPage = filters.page > 1;
+    const nextPage = hasNextPage ? filters.page + 1 : null;
+    const prevPage = hasPrevPage ? filters.page - 1 : null;
+    const lastPage = totalPages;
+
+    const pagination: PaginationMeta = {
+      currentPage: filters.page,
+      totalPages,
+      totalItems,
+      itemsPerPage: filters.limit,
+      hasNextPage,
+      hasPrevPage,
+      nextPage,
+      prevPage,
+      lastPage,
+    };
+
+    return {
+      users,
+      pagination,
+      stats,
+    };
+  },
 
   getById: (id: number) => userRepository.findById(id),
 

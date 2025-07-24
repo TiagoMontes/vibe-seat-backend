@@ -6,7 +6,8 @@ const router = Router();
 
 router.use(authenticateJWT, isAdmin);
 
-router.get('/', approvalController.getAllPendingApprovals);
+router.get('/', approvalController.getAll);
+router.get('/pending', approvalController.getAllPendingApprovals);
 router.get('/:id', approvalController.getById);
 router.patch('/:id', isAdmin, approvalController.updateStatus);
 

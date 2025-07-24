@@ -20,14 +20,7 @@ export interface AvailableTimesResponse {
     bookedSlots: number;      // Number of booked slots for this chair
     availableSlots: number;   // Number of available slots for this chair
   }>;
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalItems: number;
-    itemsPerPage: number;
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
-  };
+  pagination: PaginationMeta;
   totalSlots: number;         // Total possible slots for the day
   bookedSlots: number;        // Total booked slots across all chairs
   availableSlots: number;     // Total available slots across all chairs
@@ -59,6 +52,9 @@ export interface PaginationMeta {
   itemsPerPage: number;
   hasNextPage: boolean;
   hasPrevPage: boolean;
+  nextPage: number | null;
+  prevPage: number | null;
+  lastPage: number;
 }
 
 export interface AppointmentStats {
