@@ -37,8 +37,21 @@ const validateAndParseQueryParams = (query: ApprovalQueryParams): ApprovalFilter
 
 export const approvalController = {
   getAllPendingApprovals: async (req: Request, res: Response) => {
-    const approvals = await approvalService.allPendingApprovals();
-    return res.json(approvals);
+    try {
+      const approvals = await approvalService.allPendingApprovals();
+      return res.status(200).json({
+        success: true,
+        message: 'Aprovações pendentes listadas com sucesso',
+        data: approvals,
+        total: approvals.length
+      });
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        message: err.message || 'Erro interno do servidor',
+        error: true
+      });
+    }
   },
 
   getAll: async (req: Request<{}, {}, {}, ApprovalQueryParams>, res: Response) => {
@@ -50,35 +63,87 @@ export const approvalController = {
         // Use pagination when query parameters are present
         const filters = validateAndParseQueryParams(req.query);
         const result = await approvalService.getAllWithPagination(filters);
-        return res.json(result);
+        return res.status(200).json({
+          success: true,
+          message: 'Aprovações listadas com sucesso',
+          data: result
+        });
       } else {
         // Maintain backward compatibility - return all approvals without pagination
         const result = await approvalService.getAll();
-        return res.json(result);
+        return res.status(200).json({
+          success: true,
+          message: 'Aprovações listadas com sucesso',
+          data: result,
+          total: result.length
+        });
       }
-    } catch (error) {
-      return res.status(500).json({ 
-        message: error instanceof Error ? error.message : 'Erro interno do servidor' 
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        message: err.message || 'Erro interno do servidor',
+        error: true
       });
     }
   },
 
-  getById: async (req: Request, res: Response) => {
-    const id = parseInt(req.params.id as string);
-    const approval = await approvalService.getById(id);
-    return res.json(approval);
+  getById: async (req: Request<{ id: string }>, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID inválido',
+          error: true
+        });
+      }
+
+      const approval = await approvalService.getById(id);
+      
+      if (!approval) {
+        return res.status(404).json({
+          success: false,
+          message: 'Aprovação não encontrada',
+          data: null,
+          error: true
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Aprovação encontrada',
+        data: approval
+      });
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        message: err.message || 'Erro interno do servidor',
+        error: true
+      });
+    }
   },
 
-  updateStatus: async (req: Request, res: Response) => {
+  updateStatus: async (req: Request<{ id: string }>, res: Response) => {
     try {
-      const id = parseInt(req.params.id as string);
+      const id = parseInt(req.params.id);
       const { status } = req.body;
       const approverId = (req as any).user?.id;
 
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID inválido',
+          error: true
+        });
+      }
+
       if (!['approved', 'rejected'].includes(status)) {
-        return res
-          .status(400)
-          .json({ message: "Status inválido. Use 'approved' ou 'rejected'." });
+        return res.status(400).json({
+          success: false,
+          message: "Status inválido. Use 'approved' ou 'rejected'.",
+          error: true
+        });
       }
 
       const result = await approvalService.updateApprovalStatus(
@@ -86,9 +151,25 @@ export const approvalController = {
         status,
         approverId
       );
-      return res.json(result);
+      
+      return res.status(200).json({
+        success: true,
+        message: `Aprovação ${status === 'approved' ? 'aprovada' : 'rejeitada'} com sucesso`,
+        data: result
+      });
     } catch (err: any) {
-      return res.status(500).json({ message: err.message });
+      if (err.message === 'Aprovação não encontrada') {
+        return res.status(404).json({
+          success: false,
+          message: err.message,
+          error: true
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        message: err.message || 'Erro interno do servidor',
+        error: true
+      });
     }
   },
 };

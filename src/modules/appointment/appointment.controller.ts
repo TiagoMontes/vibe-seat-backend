@@ -1,4 +1,4 @@
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response } from 'express';
 import { appointmentService } from './appointment.service';
 import type { AppointmentInput, AppointmentQueryParams, AppointmentFilters } from './types';
 
@@ -49,20 +49,27 @@ export const appointmentController = {
   // POST /agendamentos
   create: async (
     req: Request<{}, {}, AppointmentInput>,
-    res: Response,
-    next: NextFunction
+    res: Response
   ) => {
     try {
       const user = (req as any).user;
       const appt = await appointmentService.create(user.id, req.body);
-      return res.status(201).json(appt);
-    } catch (err) {
-      next(err);
+      return res.status(201).json({
+        success: true,
+        message: 'Agendamento criado com sucesso',
+        data: appt
+      });
+    } catch (err: any) {
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Erro ao criar agendamento',
+        error: true
+      });
     }
   },
 
   // GET /agendamentos
-  getAll: async (req: Request<{}, {}, {}, AppointmentQueryParams>, res: Response, next: NextFunction) => {
+  getAll: async (req: Request<{}, {}, {}, AppointmentQueryParams>, res: Response) => {
     try {
       const user = (req as any).user;
       
@@ -73,19 +80,32 @@ export const appointmentController = {
         // Use pagination when query parameters are present
         const filters = validateAndParseQueryParams(req.query);
         const result = await appointmentService.getAllWithPagination(filters, user.id, user.role);
-        return res.json(result);
+        return res.status(200).json({
+          success: true,
+          message: 'Agendamentos listados com sucesso',
+          data: result
+        });
       } else {
         // Maintain backward compatibility - return all appointments without pagination
         const list = await appointmentService.getAll(user.id, user.role);
-        return res.json(list);
+        return res.status(200).json({
+          success: true,
+          message: 'Agendamentos listados com sucesso',
+          data: list,
+          total: list.length
+        });
       }
-    } catch (err) {
-      next(err);
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        message: err.message || 'Erro interno do servidor',
+        error: true
+      });
     }
   },
 
   // GET /agendamentos/my-appointments
-  getMyAppointments: async (req: Request, res: Response, next: NextFunction) => {
+  getMyAppointments: async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
       const appointments = await appointmentService.getMyAppointments(user.id);
@@ -101,45 +121,61 @@ export const appointmentController = {
       const confirmedDone = confirmedAppointments.filter(apt => new Date(apt.datetimeStart) <= now).length;
       const confirmed = confirmedAppointments.length; // Total de confirmados
       
-              return res.json({
+      return res.status(200).json({
+        success: true,
+        message: 'Agendamentos do usuário logado',
+        data: {
           appointments,
           total: appointments.length,
           scheduled,
           confirmed,
           confirmedUpcoming,
           confirmedDone,
-          cancelled,
-          message: 'Agendamentos do usuário logado'
-        });
-    } catch (err) {
-      next(err);
+          cancelled
+        }
+      });
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        message: err.message || 'Erro interno do servidor',
+        error: true
+      });
     }
   },
 
   // GET /agendamentos/scheduled
-  getScheduledAppointments: async (req: Request, res: Response, next: NextFunction) => {
+  getScheduledAppointments: async (req: Request, res: Response) => {
     try {
       const user = (req as any).user;
       const appointments = await appointmentService.getScheduledAppointments(user.id, user.role);
       
-      return res.json({
-        appointments,
-        total: appointments.length,
-        message: 'Todos os agendamentos'
+      return res.status(200).json({
+        success: true,
+        message: 'Todos os agendamentos',
+        data: {
+          appointments,
+          total: appointments.length
+        }
       });
-    } catch (err) {
-      next(err);
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        message: err.message || 'Erro interno do servidor',
+        error: true
+      });
     }
   },
 
   // GET /agendamentos/available-times
-  getAvailableTimes: async (req: Request<{}, {}, {}, { date: string; page?: string; limit?: string }>, res: Response, next: NextFunction) => {
+  getAvailableTimes: async (req: Request<{}, {}, {}, { date: string; page?: string; limit?: string }>, res: Response) => {
     try {
       const { date, page, limit } = req.query;
       
       if (!date) {
         return res.status(400).json({
-          message: 'Parâmetro "date" é obrigatório'
+          success: false,
+          message: 'Parâmetro "date" é obrigatório',
+          error: true
         });
       }
 
@@ -147,7 +183,9 @@ export const appointmentController = {
       const dateObj = new Date(date);
       if (isNaN(dateObj.getTime())) {
         return res.status(400).json({
-          message: 'Data deve estar no formato válido (YYYY-MM-DD)'
+          success: false,
+          message: 'Data deve estar no formato válido (YYYY-MM-DD)',
+          error: true
         });
       }
 
@@ -158,53 +196,109 @@ export const appointmentController = {
       // Validate pagination parameters
       if (isNaN(pageNumber) || pageNumber < 1) {
         return res.status(400).json({
-          message: 'Parâmetro "page" deve ser um número maior que 0'
+          success: false,
+          message: 'Parâmetro "page" deve ser um número maior que 0',
+          error: true
         });
       }
 
       if (isNaN(limitNumber) || limitNumber < 1 || limitNumber > 50) {
         return res.status(400).json({
-          message: 'Parâmetro "limit" deve ser um número entre 1 e 50'
+          success: false,
+          message: 'Parâmetro "limit" deve ser um número entre 1 e 50',
+          error: true
         });
       }
 
       const result = await appointmentService.getAvailableTimes(date, pageNumber, limitNumber);
-      return res.json(result);
-    } catch (err) {
-      next(err);
+      return res.status(200).json({
+        success: true,
+        message: 'Horários disponíveis encontrados',
+        data: result
+      });
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        message: err.message || 'Erro interno do servidor',
+        error: true
+      });
     }
   },
 
   // PATCH /agendamentos/:id/cancel
   cancel: async (
     req: Request<{ id: string }>,
-    res: Response,
-    next: NextFunction
+    res: Response
   ) => {
     try {
       const user = (req as any).user;
-      const result = await appointmentService.cancel(
-        Number(req.params.id),
-        user.id,
-        user.role
-      );
-      return res.json(result);
-    } catch (err) {
-      next(err);
+      const id = Number(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID inválido',
+          error: true
+        });
+      }
+
+      const result = await appointmentService.cancel(id, user.id, user.role);
+      return res.status(200).json({
+        success: true,
+        message: 'Agendamento cancelado com sucesso',
+        data: result
+      });
+    } catch (err: any) {
+      if (err.message === 'Agendamento não encontrado') {
+        return res.status(404).json({
+          success: false,
+          message: err.message,
+          error: true
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Erro ao cancelar agendamento',
+        error: true
+      });
     }
   },
 
   // PATCH /agendamentos/:id/confirm
   confirm: async (
     req: Request<{ id: string }>,
-    res: Response,
-    next: NextFunction
+    res: Response
   ) => {
     try {
-      const result = await appointmentService.confirm(Number(req.params.id));
-      return res.json(result);
-    } catch (err) {
-      next(err);
+      const id = Number(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID inválido',
+          error: true
+        });
+      }
+
+      const result = await appointmentService.confirm(id);
+      return res.status(200).json({
+        success: true,
+        message: 'Agendamento confirmado com sucesso',
+        data: result
+      });
+    } catch (err: any) {
+      if (err.message === 'Agendamento não encontrado') {
+        return res.status(404).json({
+          success: false,
+          message: err.message,
+          error: true
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Erro ao confirmar agendamento',
+        error: true
+      });
     }
   },
 };

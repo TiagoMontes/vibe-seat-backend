@@ -162,7 +162,7 @@ Deleta um usuário.
 
 ### 🪑 Cadeiras
 
-#### GET /cadeiras
+#### GET /chairs
 
 Lista todas as cadeiras com paginação opcional.
 
@@ -177,10 +177,10 @@ Lista todas as cadeiras com paginação opcional.
 **Exemplo:**
 
 ```
-GET /cadeiras?page=1&limit=9&search=sala&status=ACTIVE&sortBy=newest
+GET /chairs?page=1&limit=9&search=sala&status=ACTIVE&sortBy=newest
 ```
 
-#### POST /cadeiras
+#### POST /chairs
 
 Cria uma nova cadeira.
 
@@ -194,11 +194,11 @@ Cria uma nova cadeira.
 }
 ```
 
-#### GET /cadeiras/:id
+#### GET /chairs/:id
 
 Busca cadeira por ID.
 
-#### PATCH /cadeiras/:id
+#### PATCH /chairs/:id
 
 Atualiza uma cadeira.
 
@@ -211,7 +211,7 @@ Atualiza uma cadeira.
 }
 ```
 
-#### DELETE /cadeiras/:id
+#### DELETE /chairs/:id
 
 Deleta uma cadeira.
 
@@ -219,7 +219,7 @@ Deleta uma cadeira.
 
 ### 📅 Agendamentos
 
-#### GET /agendamentos
+#### GET /appointments
 
 Lista todos os agendamentos com paginação opcional.
 
@@ -234,10 +234,10 @@ Lista todos os agendamentos com paginação opcional.
 **Exemplo:**
 
 ```
-GET /agendamentos?page=1&limit=9&search=admin&status=SCHEDULED&sortBy=newest
+GET /appointments?page=1&limit=9&search=admin&status=SCHEDULED&sortBy=newest
 ```
 
-#### GET /agendamentos/my-appointments
+#### GET /appointments/my-appointments
 
 Lista agendamentos do usuário logado com estatísticas.
 
@@ -256,11 +256,11 @@ Lista agendamentos do usuário logado com estatísticas.
 }
 ```
 
-#### GET /agendamentos/scheduled
+#### GET /appointments/scheduled
 
 Lista agendamentos agendados (apenas para admin).
 
-#### GET /agendamentos/available-times
+#### GET /appointments/available-times
 
 Lista horários disponíveis para uma data específica.
 
@@ -273,7 +273,7 @@ Lista horários disponíveis para uma data específica.
 **Exemplo:**
 
 ```
-GET /agendamentos/available-times?date=2025-01-20&page=1&limit=3
+GET /appointments/available-times?date=2025-01-20&page=1&limit=3
 ```
 
 **Response:**
@@ -309,7 +309,7 @@ GET /agendamentos/available-times?date=2025-01-20&page=1&limit=3
 }
 ```
 
-#### POST /agendamentos
+#### POST /appointments
 
 Cria um novo agendamento.
 
@@ -322,11 +322,11 @@ Cria um novo agendamento.
 }
 ```
 
-#### PATCH /agendamentos/:id/cancel
+#### PATCH /appointments/:id/cancel
 
 Cancela um agendamento.
 
-#### PATCH /agendamentos/:id/confirm
+#### PATCH /appointments/:id/confirm
 
 Confirma um agendamento (apenas para admin).
 
@@ -731,13 +731,13 @@ POST /auth/login
 ### 2. Listar Cadeiras com Paginação
 
 ```bash
-GET /cadeiras?page=1&limit=9&status=ACTIVE&sortBy=newest
+GET /chairs?page=1&limit=9&status=ACTIVE&sortBy=newest
 ```
 
 ### 3. Criar um Agendamento
 
 ```bash
-POST /agendamentos
+POST /appointments
 {
   "chairId": 1,
   "datetimeStart": "2025-01-20T08:00:00.000Z"
@@ -747,7 +747,7 @@ POST /agendamentos
 ### 4. Buscar Horários Disponíveis
 
 ```bash
-GET /agendamentos/available-times?date=2025-01-20&page=1&limit=3
+GET /appointments/available-times?date=2025-01-20&page=1&limit=3
 ```
 
 ### 5. Aprovar um Usuário

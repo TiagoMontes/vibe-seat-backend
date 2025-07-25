@@ -37,8 +37,20 @@ const validateAndParseQueryParams = (query: ChairQueryParams): ChairFilters => {
 
 export const chairController = {
   create: async (req: Request<{}, {}, ChairInput>, res: Response) => {
-    const result = await chairService.create(req.body);
-    return res.status(201).json(result);
+    try {
+      const result = await chairService.create(req.body);
+      return res.status(201).json({
+        success: true,
+        message: 'Cadeira criada com sucesso',
+        data: result
+      });
+    } catch (err: any) {
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Erro ao criar cadeira',
+        error: true
+      });
+    }
   },
 
   getAll: async (req: Request<{}, {}, {}, ChairQueryParams>, res: Response) => {
@@ -50,46 +62,130 @@ export const chairController = {
         // Use pagination when query parameters are present
         const filters = validateAndParseQueryParams(req.query);
         const result = await chairService.getAllWithPagination(filters);
-        return res.json(result);
+        return res.status(200).json({
+          success: true,
+          message: 'Cadeiras listadas com sucesso',
+          data: result
+        });
       } else {
         // Maintain backward compatibility - return all chairs without pagination
         const result = await chairService.getAll();
-        return res.json(result);
+        return res.status(200).json({
+          success: true,
+          message: 'Cadeiras listadas com sucesso',
+          data: result,
+          total: result.length
+        });
       }
-    } catch (error) {
-      return res.status(500).json({ 
-        message: error instanceof Error ? error.message : 'Erro interno do servidor' 
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        message: err.message || 'Erro interno do servidor',
+        error: true
       });
     }
   },
 
   getById: async (req: Request<{ id: string }>, res: Response) => {
-    const id = Number(req.params.id);
-    const result = await chairService.getById(id);
-    return res.json(result);
+    try {
+      const id = Number(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID inválido',
+          error: true
+        });
+      }
+
+      const result = await chairService.getById(id);
+      
+      if (!result) {
+        return res.status(404).json({
+          success: false,
+          message: 'Cadeira não encontrada',
+          data: null,
+          error: true
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Cadeira encontrada',
+        data: result
+      });
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        message: err.message || 'Erro interno do servidor',
+        error: true
+      });
+    }
   },
 
-  update: async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
-    if (isNaN(id)) {
-      res.status(400).json({ message: 'ID inválido' });
-      return;
+  update: async (req: Request<{ id: string }>, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID inválido',
+          error: true
+        });
+      }
+
+      const updated = await chairService.update(id, req.body);
+      return res.status(200).json({
+        success: true,
+        message: 'Cadeira atualizada com sucesso',
+        data: updated
+      });
+    } catch (err: any) {
+      if (err.message === 'Cadeira não encontrada') {
+        return res.status(404).json({
+          success: false,
+          message: err.message,
+          error: true
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Erro ao atualizar cadeira',
+        error: true
+      });
     }
-    const updated = await chairService.update(id, req.body);
-    return res.json(updated);
   },
 
   delete: async (req: Request<{ id: string }>, res: Response) => {
     try {
       const id = Number(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID inválido',
+          error: true
+        });
+      }
+
       await chairService.delete(id);
       return res.status(200).json({
+        success: true,
         message: 'Cadeira excluída com sucesso',
         deletedId: id
       });
-    } catch (error) {
+    } catch (err: any) {
+      if (err.message === 'Cadeira não encontrada') {
+        return res.status(404).json({
+          success: false,
+          message: err.message,
+          error: true
+        });
+      }
       return res.status(400).json({
-        message: error instanceof Error ? error.message : 'Erro ao excluir cadeira',
+        success: false,
+        message: err.message || 'Erro ao excluir cadeira',
         error: true
       });
     }

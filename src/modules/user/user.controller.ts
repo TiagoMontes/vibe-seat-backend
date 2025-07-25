@@ -50,9 +50,17 @@ export const userController = {
     try {
       const { username, password, roleId } = req.body;
       const user = await userService.create(username, password, roleId);
-      res.status(201).json(user);
+      return res.status(201).json({
+        success: true,
+        message: 'Usuário criado com sucesso',
+        data: user
+      });
     } catch (err: any) {
-      res.status(400).json({ error: err.message });
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Erro ao criar usuário',
+        error: true
+      });
     }
   },
 
@@ -65,31 +73,98 @@ export const userController = {
         // Use pagination when query parameters are present
         const filters = validateAndParseQueryParams(req.query);
         const result = await userService.getAllWithPagination(filters);
-        return res.json(result);
+        return res.status(200).json({
+          success: true,
+          message: 'Usuários listados com sucesso',
+          data: result
+        });
       } else {
         // Maintain backward compatibility - return all users without pagination
         const users = await userService.getAll();
-        return res.json(users);
+        return res.status(200).json({
+          success: true,
+          message: 'Usuários listados com sucesso',
+          data: users,
+          total: users.length
+        });
       }
-    } catch (error) {
-      return res.status(500).json({ 
-        message: error instanceof Error ? error.message : 'Erro interno do servidor' 
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        message: err.message || 'Erro interno do servidor',
+        error: true
       });
     }
   },
 
-  getById: async (req: Request, res: Response) => {
-    const user = await userService.getById(Number(req.params.id));
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json(user);
+  getById: async (req: Request<{ id: string }>, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID inválido',
+          error: true
+        });
+      }
+
+      const user = await userService.getById(id);
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuário não encontrado',
+          data: null,
+          error: true
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Usuário encontrado',
+        data: user
+      });
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        message: err.message || 'Erro interno do servidor',
+        error: true
+      });
+    }
   },
 
-  delete: async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
-    await userService.delete(id);
-    return res.status(200).json({
-      message: 'Usuário excluído com sucesso',
-      deletedId: id
-    });
+  delete: async (req: Request<{ id: string }>, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID inválido',
+          error: true
+        });
+      }
+
+      await userService.delete(id);
+      return res.status(200).json({
+        success: true,
+        message: 'Usuário excluído com sucesso',
+        deletedId: id
+      });
+    } catch (err: any) {
+      if (err.message === 'Usuário não encontrado') {
+        return res.status(404).json({
+          success: false,
+          message: err.message,
+          error: true
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        message: err.message || 'Erro interno do servidor',
+        error: true
+      });
+    }
   },
 };

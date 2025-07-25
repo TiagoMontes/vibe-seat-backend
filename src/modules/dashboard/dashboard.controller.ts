@@ -8,10 +8,15 @@ export const dashboardController = {
       const user = (req as any).user;
       const dashboardData = await dashboardService.getDashboardData(user.id, user.role);
       
-      return res.json(dashboardData);
-    } catch (error) {
+      return res.status(200).json({
+        success: true,
+        message: 'Dados do dashboard carregados com sucesso',
+        data: dashboardData
+      });
+    } catch (err: any) {
       return res.status(500).json({
-        message: 'Erro ao carregar dashboard',
+        success: false,
+        message: err.message || 'Erro ao carregar dados do dashboard',
         error: true
       });
     }
