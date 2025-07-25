@@ -3,7 +3,33 @@ import type {
   ScheduleConfigInput,
   ScheduleConfigUpdateInput,
   ScheduleConfig,
+  TimeRange,
 } from './types';
+
+// Função para verificar sobreposição de horários
+const hasTimeOverlap = (ranges: TimeRange[]): boolean => {
+  for (let i = 0; i < ranges.length; i++) {
+    for (let j = i + 1; j < ranges.length; j++) {
+      const range1 = ranges[i];
+      const range2 = ranges[j];
+      
+      const start1 = range1.start.split(':').map(Number);
+      const end1 = range1.end.split(':').map(Number);
+      const start2 = range2.start.split(':').map(Number);
+      const end2 = range2.end.split(':').map(Number);
+      
+      const time1Start = (start1[0] ?? 0) * 60 + (start1[1] ?? 0);
+      const time1End = (end1[0] ?? 0) * 60 + (end1[1] ?? 0);
+      const time2Start = (start2[0] ?? 0) * 60 + (start2[1] ?? 0);
+      const time2End = (end2[0] ?? 0) * 60 + (end2[1] ?? 0);
+      
+      if (time1Start < time2End && time1End > time2Start) {
+        return true; // Há sobreposição
+      }
+    }
+  }
+  return false;
+};
 
 export const scheduleRepository = {
   // Cria apenas se não existir nenhum ScheduleConfig
@@ -11,6 +37,11 @@ export const scheduleRepository = {
     const existing = await prisma.scheduleConfig.findFirst();
     if (existing) {
       throw new Error('Já existe uma configuração de agenda.');
+    }
+
+    // Verifica sobreposição de horários
+    if (hasTimeOverlap(data.timeRanges)) {
+      throw new Error('Existe sobreposição entre os horários configurados.');
     }
 
     // Verifica se todos os dayIds existem
@@ -28,8 +59,7 @@ export const scheduleRepository = {
     const scheduleConfig = await prisma.scheduleConfig.create({
       data: {
         id: 1,
-        timeStart: data.timeStart,
-        timeEnd: data.timeEnd,
+        timeRanges: data.timeRanges,
         validFrom: data.validFrom,
         validTo: data.validTo,
       },
@@ -74,12 +104,16 @@ export const scheduleRepository = {
       throw new Error('Nenhuma configuração encontrada para atualizar.');
     }
 
+    // Se timeRanges foi fornecido, verifica sobreposição
+    if (data.timeRanges && hasTimeOverlap(data.timeRanges)) {
+      throw new Error('Existe sobreposição entre os horários configurados.');
+    }
+
     // Atualiza o ScheduleConfig
     const updatedScheduleConfig = await prisma.scheduleConfig.update({
       where: { id: existing.id },
       data: {
-        timeStart: data.timeStart,
-        timeEnd: data.timeEnd,
+        timeRanges: data.timeRanges,
         validFrom: data.validFrom,
         validTo: data.validTo,
       },

@@ -8,6 +8,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
+    "seed:admin": "bun run src/scripts/seed-admin.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:performance": "artillery run tests/performance/artillery.yml"

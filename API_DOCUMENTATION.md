@@ -14,6 +14,37 @@ http://localhost:3000
 
 A API usa autenticação JWT Bearer Token. Após fazer login, use o token retornado no header `Authorization: Bearer <token>`.
 
+## Soft Delete Automático
+
+Todos os endpoints de DELETE agora fazem **soft delete** automaticamente:
+
+- Registros não são removidos do banco
+- Campo `deletedAt` é preenchido com a data/hora atual
+- Queries automáticas filtram registros com `deletedAt = null`
+
+### Campos de Timestamp
+
+Todos os models agora incluem automaticamente:
+
+- `createdAt` - Data/hora de criação (preenchido automaticamente)
+- `updatedAt` - Data/hora da última atualização (atualizado automaticamente)
+- `deletedAt` - Data/hora de exclusão (null se não deletado)
+
+### Exemplo de Response com Timestamps:
+
+```json
+{
+  "id": 1,
+  "name": "monday",
+  "scheduleConfigId": 1,
+  "createdAt": "2025-01-20T10:00:00.000Z",
+  "updatedAt": "2025-01-20T15:30:00.000Z",
+  "deletedAt": null
+}
+```
+
+---
+
 ## Endpoints
 
 ### 🔐 Autenticação
@@ -449,8 +480,20 @@ Retorna a configuração de horário atual (apenas uma configuração global).
 ```json
 {
   "id": 1,
-  "timeStart": "08:00",
-  "timeEnd": "17:00",
+  "timeRanges": [
+    {
+      "start": "08:00",
+      "end": "10:00"
+    },
+    {
+      "start": "14:00",
+      "end": "16:00"
+    },
+    {
+      "start": "18:00",
+      "end": "20:00"
+    }
+  ],
   "validFrom": "2025-01-01T00:00:00.000Z",
   "validTo": "2025-12-31T23:59:59.000Z",
   "days": [
@@ -478,8 +521,20 @@ Cria a configuração de horário (apenas se não existir nenhuma).
 
 ```json
 {
-  "timeStart": "08:00",
-  "timeEnd": "17:00",
+  "timeRanges": [
+    {
+      "start": "08:00",
+      "end": "10:00"
+    },
+    {
+      "start": "14:00",
+      "end": "16:00"
+    },
+    {
+      "start": "18:00",
+      "end": "20:00"
+    }
+  ],
   "validFrom": "2025-01-01T00:00:00.000Z",
   "validTo": "2025-12-31T23:59:59.000Z",
   "dayIds": [1, 2, 3, 4, 5]
@@ -491,8 +546,20 @@ Cria a configuração de horário (apenas se não existir nenhuma).
 ```json
 {
   "id": 1,
-  "timeStart": "08:00",
-  "timeEnd": "17:00",
+  "timeRanges": [
+    {
+      "start": "08:00",
+      "end": "10:00"
+    },
+    {
+      "start": "14:00",
+      "end": "16:00"
+    },
+    {
+      "start": "18:00",
+      "end": "20:00"
+    }
+  ],
   "validFrom": "2025-01-01T00:00:00.000Z",
   "validTo": "2025-12-31T23:59:59.000Z",
   "days": [
@@ -528,8 +595,16 @@ Atualiza a configuração de horário existente.
 
 ```json
 {
-  "timeStart": "09:00",
-  "timeEnd": "18:00",
+  "timeRanges": [
+    {
+      "start": "09:00",
+      "end": "11:00"
+    },
+    {
+      "start": "15:00",
+      "end": "17:00"
+    }
+  ],
   "validFrom": "2025-02-01T00:00:00.000Z",
   "validTo": "2025-12-31T23:59:59.000Z",
   "dayIds": [1, 3, 5]

@@ -697,7 +697,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"timeStart\": \"08:00\",\n  \"timeEnd\": \"17:00\",\n  \"validFrom\": \"2025-01-01T00:00:00.000Z\",\n  \"validTo\": \"2025-12-31T23:59:59.000Z\",\n  \"dayIds\": [1, 2, 3, 4, 5]\n}"
+              "raw": "{\n  \"timeRanges\": [\n    {\n      \"start\": \"08:00\",\n      \"end\": \"10:00\"\n    },\n    {\n      \"start\": \"14:00\",\n      \"end\": \"16:00\"\n    },\n    {\n      \"start\": \"18:00\",\n      \"end\": \"20:00\"\n    }\n  ],\n  \"validFrom\": \"2025-01-01T00:00:00.000Z\",\n  \"validTo\": \"2025-12-31T23:59:59.000Z\",\n  \"dayIds\": [1, 2, 3, 4, 5]\n}"
             },
             "url": {
               "raw": "{{localhost}}/schedules",
@@ -718,7 +718,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"timeStart\": \"09:00\",\n  \"timeEnd\": \"18:00\",\n  \"validFrom\": \"2025-02-01T00:00:00.000Z\",\n  \"validTo\": \"2025-12-31T23:59:59.000Z\",\n  \"dayIds\": [1, 3, 5]\n}"
+              "raw": "{\n  \"timeRanges\": [\n    {\n      \"start\": \"09:00\",\n      \"end\": \"11:00\"\n    },\n    {\n      \"start\": \"15:00\",\n      \"end\": \"17:00\"\n    }\n  ],\n  \"validFrom\": \"2025-02-01T00:00:00.000Z\",\n  \"validTo\": \"2025-12-31T23:59:59.000Z\",\n  \"dayIds\": [1, 3, 5]\n}"
             },
             "url": {
               "raw": "{{localhost}}/schedules",

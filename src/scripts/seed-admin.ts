@@ -8,7 +8,7 @@ async function main() {
   });
 
   const existingUser = await prisma.user.findFirst({
-    where: { username: 'admin@admin.com' },
+    where: { username: 'admin' },
   });
 
   if (!existingUser) {

@@ -37,6 +37,9 @@ export interface DayOfWeek {
   id: number;
   name: string;
   scheduleConfigId: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
 }
 
 export interface DayOfWeekWithPagination {

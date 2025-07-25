@@ -22,6 +22,9 @@ enum AppointmentStatus {
 model Role {
   id               Int            @id @default(autoincrement())
   name             String         @unique
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  deletedAt        DateTime?
   users            User[]
   requestedByUsers UserApproval[] @relation("RoleRequested")
 }
@@ -32,6 +35,9 @@ model User {
   password     String
   status       String         @default("pending") // "pending", "approved", "rejected"
   roleId       Int
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  deletedAt    DateTime?
   role         Role           @relation(fields: [roleId], references: [id])
   approvals    UserApproval[] @relation("RequestedUser")
   approvedByMe UserApproval[] @relation("ApprovedBy")
@@ -39,15 +45,17 @@ model User {
 }
 
 model UserApproval {
-  id              Int      @id @default(autoincrement())
+  id              Int       @id @default(autoincrement())
   userId          Int
-  user            User     @relation("RequestedUser", fields: [userId], references: [id])
+  user            User      @relation("RequestedUser", fields: [userId], references: [id])
   requestedRoleId Int
-  requestedRole   Role     @relation("RoleRequested", fields: [requestedRoleId], references: [id])
+  requestedRole   Role      @relation("RoleRequested", fields: [requestedRoleId], references: [id])
   approvedById    Int?
-  approvedBy      User?    @relation("ApprovedBy", fields: [approvedById], references: [id])
-  status          String   @default("pending")
-  createdAt       DateTime @default(now())
+  approvedBy      User?     @relation("ApprovedBy", fields: [approvedById], references: [id])
+  status          String    @default("pending")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
 }
 
 model Chair {
@@ -58,21 +66,27 @@ model Chair {
   status       ChairStatus   @default(ACTIVE)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
   appointments Appointment[]
 }
 
 model ScheduleConfig {
-  id        Int         @id @default(1) // sempre 1, singleton
-  timeStart String
-  timeEnd   String
-  validFrom DateTime?
-  validTo   DateTime?
-  days      DayOfWeek[]
+  id         Int         @id @default(1) // sempre 1, singleton
+  timeRanges Json // [{"start": "08:00", "end": "10:00"}, {"start": "14:00", "end": "16:00"}]
+  validFrom  DateTime?
+  validTo    DateTime?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  deletedAt  DateTime?
+  days       DayOfWeek[]
 }
 
 model DayOfWeek {
   id               Int             @id @default(autoincrement())
   name             String // "monday", "tuesday", "wednesday", etc.
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  deletedAt        DateTime?
   scheduleConfig   ScheduleConfig? @relation(fields: [scheduleConfigId], references: [id])
   scheduleConfigId Int? // nullable, pois dias podem existir sem configuração
 }
@@ -88,4 +102,6 @@ model Appointment {
   status            AppointmentStatus @default(SCHEDULED)
   presenceConfirmed Boolean           @default(false)
   createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  deletedAt         DateTime?
 }

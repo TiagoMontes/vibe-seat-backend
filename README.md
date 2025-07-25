@@ -30,19 +30,15 @@ git clone https://github.com/TiagoMontes/vibe-seat-backend.git
 cd vibe-seat-backend
 ```
 
-### 2. Configure o arquivo .env
+### 2. Configuração do Banco de Dados
 
-Crie um arquivo `.env` na raiz do projeto com base no exemplo abaixo:
+O projeto está configurado para usar apenas o banco de dados do Docker. A variável `DATABASE_URL` é automaticamente definida no `docker-compose.yml`:
 
 ```env
-DB_USER=root
-DB_PASSWORD=root
-DB_HOST=db
-DB_PORT=3306
-DB_NAME=vibe_seat
-
-DATABASE_URL="mysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+DATABASE_URL=mysql://root:root@db:3306/vibe-seat-db?connection_limit=50
 ```
+
+**⚠️ Importante**: Não crie um arquivo `.env` local, pois isso pode causar conflitos com o banco do Docker.
 
 ---
 
@@ -64,21 +60,21 @@ Este script faz automaticamente:
 
 ### Desenvolvimento Local
 
-Se preferir rodar localmente:
+Para desenvolvimento local, é recomendado usar o Docker para manter a consistência do ambiente:
 
 ```bash
-# Instalar dependências
+# Usar Docker (recomendado)
+bun run start:docker
+
+# Ou rodar apenas o banco localmente e a aplicação fora do container
+docker compose up db -d
 bun install
-
-# Gerar cliente Prisma
 bun run prisma:generate
-
-# Executar migrations
 bun run prisma:migrate
-
-# Rodar aplicação
 bun run src/index.ts
 ```
+
+**⚠️ Nota**: Se rodar localmente, certifique-se de que o MySQL local está configurado corretamente e use a mesma configuração do Docker.
 
 ---
 
@@ -101,8 +97,33 @@ bun run prisma:generate
 # Executar migrations
 bun run prisma:migrate
 
+# Executar seed do admin
+bun run seed:admin
+
+# Resetar banco de dados (limpa tudo e recria)
+bun run db:reset
+
 # Abrir Prisma Studio (interface visual do banco)
 bun run prisma:studio
+```
+
+### Comandos no Docker
+
+```bash
+# Executar seed no container
+docker exec backend-app-1 bun run seed:admin
+
+# Executar migrations no container
+docker exec backend-app-1 bun run prisma:migrate
+
+# Conectar no MySQL do Docker
+docker exec -it backend-db-1 mysql -u root -proot -e "SHOW DATABASES;"
+
+# Ver logs do banco
+docker logs backend-db-1
+
+# Acessar bash do container da aplicação
+docker exec -it backend-app-1 bash
 ```
 
 ---
