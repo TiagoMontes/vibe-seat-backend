@@ -51,23 +51,30 @@ model UserApproval {
 }
 
 model Chair {
-  id           Int              @id @default(autoincrement())
-  name         String           @unique
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
   description  String?
   location     String?
-  status       ChairStatus      @default(ACTIVE)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+  status       ChairStatus   @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   appointments Appointment[]
 }
 
 model ScheduleConfig {
-  id        Int       @id @default(autoincrement())
-  dayOfWeek Int // 0 = domingo … 6 = sábado
-  timeStart String // "09:00"
-  timeEnd   String // "17:00"
+  id        Int         @id @default(1) // sempre 1, singleton
+  timeStart String
+  timeEnd   String
   validFrom DateTime?
   validTo   DateTime?
+  days      DayOfWeek[]
+}
+
+model DayOfWeek {
+  id               Int             @id @default(autoincrement())
+  name             String // "monday", "tuesday", "wednesday", etc.
+  scheduleConfig   ScheduleConfig? @relation(fields: [scheduleConfigId], references: [id])
+  scheduleConfigId Int? // nullable, pois dias podem existir sem configuração
 }
 
 model Appointment {

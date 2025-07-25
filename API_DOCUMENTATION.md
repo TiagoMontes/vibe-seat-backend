@@ -343,72 +343,208 @@ Atualiza status da aprovação.
 
 ---
 
-### ⏰ Configurações de Horário
+### 📅 Dias da Semana
 
-#### GET /schedules
+#### GET /days-of-week
 
-Lista todas as configurações de horário com paginação opcional.
+Lista todos os dias da semana com paginação opcional.
 
 **Query Parameters (opcionais):**
 
 - `page` - Número da página (padrão: 1)
 - `limit` - Itens por página (padrão: 9, máximo: 50)
-- `search` - Buscar por timeStart ou timeEnd
-- `dayOfWeek` - Filtrar por dia da semana (0-6, onde 0=domingo)
-- `sortBy` - Ordenação: `newest`, `oldest`, `time-asc`, `time-desc`
+- `search` - Buscar por nome do dia
+- `sortBy` - Ordenação: `newest`, `oldest`, `name-asc`, `name-desc`
 
 **Exemplo:**
 
 ```
-GET /schedules?page=1&limit=9&search=08:00&dayOfWeek=1&sortBy=newest
+GET /days-of-week?page=1&limit=9&search=monday&sortBy=name-asc
 ```
 
-#### POST /schedules
+**Response com paginação:**
 
-Cria configurações de horário para múltiplos dias.
+```json
+{
+  "days": [
+    {
+      "id": 1,
+      "name": "monday",
+      "scheduleConfigId": 1
+    },
+    {
+      "id": 2,
+      "name": "tuesday",
+      "scheduleConfigId": 1
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "totalPages": 2,
+    "totalItems": 7,
+    "itemsPerPage": 9,
+    "hasNextPage": true,
+    "hasPrevPage": false,
+    "nextPage": 2,
+    "prevPage": null,
+    "lastPage": 2
+  }
+}
+```
+
+#### POST /days-of-week
+
+Cria um novo dia da semana.
 
 **Body:**
 
 ```json
 {
-  "daysOfWeek": [1, 3, 5],
-  "timeStart": "08:00",
-  "timeEnd": "10:00",
-  "validFrom": "2025-01-01T00:00:00.000Z",
-  "validTo": "2025-12-31T23:59:59.000Z"
+  "name": "saturday"
 }
 ```
 
-#### GET /schedules/:id
+#### GET /days-of-week/:id
 
-Busca configuração por ID.
+Busca dia da semana por ID.
 
-#### PATCH /schedules/:id
+#### PATCH /days-of-week/:id
 
-Atualiza uma configuração.
+Atualiza um dia da semana.
 
 **Body:**
 
 ```json
 {
-  "timeStart": "09:00",
-  "timeEnd": "11:00"
+  "name": "saturday"
 }
 ```
 
-#### DELETE /schedules/:id
+#### DELETE /days-of-week/:id
 
-Deleta uma configuração.
+Deleta um dia da semana.
 
-#### DELETE /schedules
+#### DELETE /days-of-week
 
-Deleta múltiplas configurações.
+Deleta múltiplos dias da semana.
 
 **Body:**
 
 ```json
 {
   "ids": [1, 2, 3]
+}
+```
+
+---
+
+### ⏰ Configurações de Horário
+
+#### GET /schedules
+
+Retorna a configuração de horário atual (apenas uma configuração global).
+
+**Response:**
+
+```json
+{
+  "id": 1,
+  "timeStart": "08:00",
+  "timeEnd": "17:00",
+  "validFrom": "2025-01-01T00:00:00.000Z",
+  "validTo": "2025-12-31T23:59:59.000Z",
+  "days": [
+    {
+      "id": 1,
+      "name": "monday"
+    },
+    {
+      "id": 2,
+      "name": "tuesday"
+    },
+    {
+      "id": 3,
+      "name": "wednesday"
+    }
+  ]
+}
+```
+
+#### POST /schedules
+
+Cria a configuração de horário (apenas se não existir nenhuma).
+
+**Body:**
+
+```json
+{
+  "timeStart": "08:00",
+  "timeEnd": "17:00",
+  "validFrom": "2025-01-01T00:00:00.000Z",
+  "validTo": "2025-12-31T23:59:59.000Z",
+  "dayIds": [1, 2, 3, 4, 5]
+}
+```
+
+**Response:**
+
+```json
+{
+  "id": 1,
+  "timeStart": "08:00",
+  "timeEnd": "17:00",
+  "validFrom": "2025-01-01T00:00:00.000Z",
+  "validTo": "2025-12-31T23:59:59.000Z",
+  "days": [
+    {
+      "id": 1,
+      "name": "monday"
+    },
+    {
+      "id": 2,
+      "name": "tuesday"
+    },
+    {
+      "id": 3,
+      "name": "wednesday"
+    },
+    {
+      "id": 4,
+      "name": "thursday"
+    },
+    {
+      "id": 5,
+      "name": "friday"
+    }
+  ]
+}
+```
+
+#### PATCH /schedules
+
+Atualiza a configuração de horário existente.
+
+**Body:**
+
+```json
+{
+  "timeStart": "09:00",
+  "timeEnd": "18:00",
+  "validFrom": "2025-02-01T00:00:00.000Z",
+  "validTo": "2025-12-31T23:59:59.000Z",
+  "dayIds": [1, 3, 5]
+}
+```
+
+#### DELETE /schedules
+
+Remove a configuração de horário existente.
+
+**Response:**
+
+```json
+{
+  "message": "Configuração removida com sucesso"
 }
 ```
 

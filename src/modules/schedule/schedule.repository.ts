@@ -1,137 +1,157 @@
 import { prisma } from '@/lib/prisma';
 import type {
-  ScheduleConfigSingleInput,
+  ScheduleConfigInput,
   ScheduleConfigUpdateInput,
-  ScheduleFilters,
-  ScheduleStats,
+  ScheduleConfig,
 } from './types';
 
 export const scheduleRepository = {
-  create: (data: ScheduleConfigSingleInput) =>
-    prisma.scheduleConfig.create({ data }),
-
-  findAll: () => prisma.scheduleConfig.findMany(),
-
-  findManyWithPagination: async (filters: ScheduleFilters) => {
-    const { page, limit, search, dayOfWeek, sortBy } = filters;
-    const offset = (page - 1) * limit;
-
-    // Build where clause
-    const where: any = {};
-    
-    if (dayOfWeek !== undefined) {
-      where.dayOfWeek = dayOfWeek;
+  // Cria apenas se não existir nenhum ScheduleConfig
+  create: async (data: ScheduleConfigInput): Promise<ScheduleConfig> => {
+    const existing = await prisma.scheduleConfig.findFirst();
+    if (existing) {
+      throw new Error('Já existe uma configuração de agenda.');
     }
 
-    if (search) {
-      const searchTerm = search.trim();
-      where.OR = [
-        { timeStart: { contains: searchTerm } },
-        { timeEnd: { contains: searchTerm } },
-      ];
+    // Verifica se todos os dayIds existem
+    const existingDays = await prisma.dayOfWeek.findMany({
+      where: { id: { in: data.dayIds } },
+    });
+
+    if (existingDays.length !== data.dayIds.length) {
+      const foundIds = existingDays.map(day => day.id);
+      const missingIds = data.dayIds.filter(id => !foundIds.includes(id));
+      throw new Error(`Dias da semana não encontrados: ${missingIds.join(', ')}`);
     }
 
-    // Build orderBy clause
-    let orderBy: any = {};
-    switch (sortBy) {
-      case 'newest':
-        orderBy = { id: 'desc' };
-        break;
-      case 'oldest':
-        orderBy = { id: 'asc' };
-        break;
-      case 'time-asc':
-        orderBy = { timeStart: 'asc' };
-        break;
-      case 'time-desc':
-        orderBy = { timeStart: 'desc' };
-        break;
-      default:
-        orderBy = { id: 'desc' };
-    }
-
-    return await prisma.scheduleConfig.findMany({
-      where,
-      orderBy,
-      skip: offset,
-      take: limit,
-      select: {
-        id: true,
-        dayOfWeek: true,
-        timeStart: true,
-        timeEnd: true,
-        validFrom: true,
-        validTo: true,
+    // Cria o ScheduleConfig
+    const scheduleConfig = await prisma.scheduleConfig.create({
+      data: {
+        id: 1,
+        timeStart: data.timeStart,
+        timeEnd: data.timeEnd,
+        validFrom: data.validFrom,
+        validTo: data.validTo,
       },
     });
-  },
 
-  countWithFilters: async (filters: Pick<ScheduleFilters, 'search' | 'dayOfWeek'>) => {
-    const { search, dayOfWeek } = filters;
+    // Relaciona com os DayOfWeek existentes
+    await Promise.all(
+      data.dayIds.map(dayId =>
+        prisma.dayOfWeek.update({
+          where: { id: dayId },
+          data: { scheduleConfigId: 1 },
+        })
+      )
+    );
 
-    const where: any = {};
-    
-    if (dayOfWeek !== undefined) {
-      where.dayOfWeek = dayOfWeek;
-    }
-
-    if (search) {
-      const searchTerm = search.trim();
-      where.OR = [
-        { timeStart: { contains: searchTerm } },
-        { timeEnd: { contains: searchTerm } },
-      ];
-    }
-
-    return await prisma.scheduleConfig.count({ where });
-  },
-
-  getStatsWithFilters: async (filters: Pick<ScheduleFilters, 'search' | 'dayOfWeek'>) => {
-    const { search, dayOfWeek } = filters;
-
-    const where: any = {};
-    
-    if (dayOfWeek !== undefined) {
-      where.dayOfWeek = dayOfWeek;
-    }
-
-    if (search) {
-      const searchTerm = search.trim();
-      where.OR = [
-        { timeStart: { contains: searchTerm } },
-        { timeEnd: { contains: searchTerm } },
-      ];
-    }
-
-    const [total, monday, tuesday, wednesday, thursday, friday, saturday, sunday] = await Promise.all([
-      prisma.scheduleConfig.count({ where }),
-      prisma.scheduleConfig.count({ where: { ...where, dayOfWeek: 1 } }),
-      prisma.scheduleConfig.count({ where: { ...where, dayOfWeek: 2 } }),
-      prisma.scheduleConfig.count({ where: { ...where, dayOfWeek: 3 } }),
-      prisma.scheduleConfig.count({ where: { ...where, dayOfWeek: 4 } }),
-      prisma.scheduleConfig.count({ where: { ...where, dayOfWeek: 5 } }),
-      prisma.scheduleConfig.count({ where: { ...where, dayOfWeek: 6 } }),
-      prisma.scheduleConfig.count({ where: { ...where, dayOfWeek: 0 } }),
-    ]);
+    // Busca os dias relacionados
+    const days = await prisma.dayOfWeek.findMany({
+      where: { scheduleConfigId: 1 },
+    });
 
     return {
-      total,
-      monday,
-      tuesday,
-      wednesday,
-      thursday,
-      friday,
-      saturday,
-      sunday,
-    } as ScheduleStats;
+      ...scheduleConfig,
+      days,
+    };
   },
 
-  findById: (id: number) => prisma.scheduleConfig.findUnique({ where: { id } }),
+  // Busca a única configuração existente (ou null)
+  find: async (): Promise<ScheduleConfig | null> => {
+    const scheduleConfig = await prisma.scheduleConfig.findFirst({
+      include: {
+        days: true,
+      },
+    });
 
-  update: (id: number, data: ScheduleConfigUpdateInput) =>
-    prisma.scheduleConfig.update({ where: { id }, data }),
+    return scheduleConfig;
+  },
 
-  remove: (id: number) => prisma.scheduleConfig.delete({ where: { id } }),
+  // Atualiza a configuração existente
+  update: async (data: ScheduleConfigUpdateInput): Promise<ScheduleConfig> => {
+    const existing = await prisma.scheduleConfig.findFirst();
+    if (!existing) {
+      throw new Error('Nenhuma configuração encontrada para atualizar.');
+    }
 
-  removeMany: (ids: number[]) => prisma.scheduleConfig.deleteMany({ where: { id: { in: ids } } }),
+    // Atualiza o ScheduleConfig
+    const updatedScheduleConfig = await prisma.scheduleConfig.update({
+      where: { id: existing.id },
+      data: {
+        timeStart: data.timeStart,
+        timeEnd: data.timeEnd,
+        validFrom: data.validFrom,
+        validTo: data.validTo,
+      },
+    });
+
+    // Se dayIds foi fornecido, atualiza os relacionamentos
+    if (data.dayIds) {
+      // Verifica se todos os dayIds existem
+      const existingDays = await prisma.dayOfWeek.findMany({
+        where: { id: { in: data.dayIds } },
+      });
+
+      if (existingDays.length !== data.dayIds.length) {
+        const foundIds = existingDays.map(day => day.id);
+        const missingIds = data.dayIds.filter(id => !foundIds.includes(id));
+        throw new Error(`Dias da semana não encontrados: ${missingIds.join(', ')}`);
+      }
+
+      // Remove relacionamentos existentes
+      await prisma.dayOfWeek.updateMany({
+        where: { scheduleConfigId: existing.id },
+        data: { scheduleConfigId: null },
+      });
+
+      // Cria novos relacionamentos
+      await Promise.all(
+        data.dayIds.map(dayId =>
+          prisma.dayOfWeek.update({
+            where: { id: dayId },
+            data: { scheduleConfigId: existing.id },
+          })
+        )
+      );
+
+      // Busca os dias relacionados
+      const days = await prisma.dayOfWeek.findMany({
+        where: { scheduleConfigId: existing.id },
+      });
+
+      return {
+        ...updatedScheduleConfig,
+        days,
+      };
+    }
+
+    // Se dayIds não foi fornecido, busca os dias existentes
+    const days = await prisma.dayOfWeek.findMany({
+      where: { scheduleConfigId: existing.id },
+    });
+
+    return {
+      ...updatedScheduleConfig,
+      days,
+    };
+  },
+
+  // Deleta a configuração existente
+  remove: async (): Promise<void> => {
+    const existing = await prisma.scheduleConfig.findFirst();
+    if (!existing) {
+      throw new Error('Nenhuma configuração encontrada para deletar.');
+    }
+
+    // Remove os relacionamentos primeiro
+    await prisma.dayOfWeek.updateMany({
+      where: { scheduleConfigId: existing.id },
+      data: { scheduleConfigId: null },
+    });
+
+    // Remove o ScheduleConfig
+    await prisma.scheduleConfig.delete({
+      where: { id: existing.id },
+    });
+  },
 };

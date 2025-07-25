@@ -7,11 +7,6 @@
   },
   "variable": [
     {
-      "key": "baseUrl",
-      "value": "http://localhost:3000",
-      "type": "string"
-    },
-    {
       "key": "token",
       "value": "",
       "type": "string"
@@ -46,8 +41,8 @@
               "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/auth/login",
+              "host": ["{{localhost}}"],
               "path": ["auth", "login"]
             }
           }
@@ -63,8 +58,8 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/users?page=1&limit=9&search=admin&status=approved&roleId=1&sortBy=newest",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/users?page=1&limit=9&search=admin&status=approved&roleId=1&sortBy=newest",
+              "host": ["{{localhost}}"],
               "path": ["users"],
               "query": [
                 {
@@ -107,8 +102,8 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/users",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/users",
+              "host": ["{{localhost}}"],
               "path": ["users"]
             }
           }
@@ -128,8 +123,8 @@
               "raw": "{\n  \"username\": \"novo_usuario\",\n  \"password\": \"senha123\",\n  \"roleId\": 2\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/users",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/users",
+              "host": ["{{localhost}}"],
               "path": ["users"]
             }
           }
@@ -140,8 +135,8 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/users/1",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/users/1",
+              "host": ["{{localhost}}"],
               "path": ["users", "1"]
             }
           }
@@ -152,8 +147,8 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/users/1",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/users/1",
+              "host": ["{{localhost}}"],
               "path": ["users", "1"]
             }
           }
@@ -169,8 +164,8 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/cadeiras?page=1&limit=9&search=sala&status=ACTIVE&sortBy=newest",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/cadeiras?page=1&limit=9&search=sala&status=ACTIVE&sortBy=newest",
+              "host": ["{{localhost}}"],
               "path": ["cadeiras"],
               "query": [
                 {
@@ -208,8 +203,8 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/cadeiras",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/cadeiras",
+              "host": ["{{localhost}}"],
               "path": ["cadeiras"]
             }
           }
@@ -229,8 +224,8 @@
               "raw": "{\n  \"name\": \"Cadeira 1\",\n  \"description\": \"Cadeira na sala principal\",\n  \"location\": \"Sala A\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/cadeiras",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/cadeiras",
+              "host": ["{{localhost}}"],
               "path": ["cadeiras"]
             }
           }
@@ -241,8 +236,8 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/cadeiras/1",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/cadeiras/1",
+              "host": ["{{localhost}}"],
               "path": ["cadeiras", "1"]
             }
           }
@@ -262,8 +257,8 @@
               "raw": "{\n  \"name\": \"Cadeira 1 Atualizada\",\n  \"status\": \"MAINTENANCE\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/cadeiras/1",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/cadeiras/1",
+              "host": ["{{localhost}}"],
               "path": ["cadeiras", "1"]
             }
           }
@@ -274,8 +269,8 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/cadeiras/1",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/cadeiras/1",
+              "host": ["{{localhost}}"],
               "path": ["cadeiras", "1"]
             }
           }
@@ -291,9 +286,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/agendamentos?page=1&limit=9&search=admin&status=SCHEDULED&sortBy=newest",
-              "host": ["{{baseUrl}}"],
-              "path": ["agendamentos"],
+              "raw": "{{localhost}}/appointments?page=1&limit=9&search=admin&status=SCHEDULED&sortBy=newest",
+              "host": ["{{localhost}}"],
+              "path": ["appointments"],
               "query": [
                 {
                   "key": "page",
@@ -330,9 +325,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/agendamentos",
-              "host": ["{{baseUrl}}"],
-              "path": ["agendamentos"]
+              "raw": "{{localhost}}/appointments",
+              "host": ["{{localhost}}"],
+              "path": ["appointments"]
             }
           }
         },
@@ -342,9 +337,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/agendamentos/my-appointments",
-              "host": ["{{baseUrl}}"],
-              "path": ["agendamentos", "my-appointments"]
+              "raw": "{{localhost}}/appointments/my-appointments",
+              "host": ["{{localhost}}"],
+              "path": ["appointments", "my-appointments"]
             }
           }
         },
@@ -354,9 +349,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/agendamentos/scheduled",
-              "host": ["{{baseUrl}}"],
-              "path": ["agendamentos", "scheduled"]
+              "raw": "{{localhost}}/appointments/scheduled",
+              "host": ["{{localhost}}"],
+              "path": ["appointments", "scheduled"]
             }
           }
         },
@@ -366,9 +361,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/agendamentos/available-times?date=2025-01-20&page=1&limit=3",
-              "host": ["{{baseUrl}}"],
-              "path": ["agendamentos", "available-times"],
+              "raw": "{{localhost}}/appointments/available-times?date=2025-01-20&page=1&limit=3",
+              "host": ["{{localhost}}"],
+              "path": ["appointments", "available-times"],
               "query": [
                 {
                   "key": "date",
@@ -404,9 +399,9 @@
               "raw": "{\n  \"chairId\": 1,\n  \"datetimeStart\": \"2025-01-20T08:00:00.000Z\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/agendamentos",
-              "host": ["{{baseUrl}}"],
-              "path": ["agendamentos"]
+              "raw": "{{localhost}}/appointments",
+              "host": ["{{localhost}}"],
+              "path": ["appointments"]
             }
           }
         },
@@ -416,9 +411,9 @@
             "method": "PATCH",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/agendamentos/1/cancel",
-              "host": ["{{baseUrl}}"],
-              "path": ["agendamentos", "1", "cancel"]
+              "raw": "{{localhost}}/appointments/1/cancel",
+              "host": ["{{localhost}}"],
+              "path": ["appointments", "1", "cancel"]
             }
           }
         },
@@ -428,9 +423,9 @@
             "method": "PATCH",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/agendamentos/1/confirm",
-              "host": ["{{baseUrl}}"],
-              "path": ["agendamentos", "1", "confirm"]
+              "raw": "{{localhost}}/appointments/1/confirm",
+              "host": ["{{localhost}}"],
+              "path": ["appointments", "1", "confirm"]
             }
           }
         }
@@ -445,8 +440,8 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/approvals?page=1&limit=9&search=admin&status=pending&sortBy=newest",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/approvals?page=1&limit=9&search=admin&status=pending&sortBy=newest",
+              "host": ["{{localhost}}"],
               "path": ["approvals"],
               "query": [
                 {
@@ -484,8 +479,8 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/approvals",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/approvals",
+              "host": ["{{localhost}}"],
               "path": ["approvals"]
             }
           }
@@ -496,8 +491,8 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/approvals/pending",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/approvals/pending",
+              "host": ["{{localhost}}"],
               "path": ["approvals", "pending"]
             }
           }
@@ -508,8 +503,8 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/approvals/1",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/approvals/1",
+              "host": ["{{localhost}}"],
               "path": ["approvals", "1"]
             }
           }
@@ -529,8 +524,8 @@
               "raw": "{\n  \"status\": \"approved\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/approvals/1",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/approvals/1",
+              "host": ["{{localhost}}"],
               "path": ["approvals", "1"]
             }
           }
@@ -538,17 +533,17 @@
       ]
     },
     {
-      "name": "Schedules",
+      "name": "Days of Week",
       "item": [
         {
-          "name": "Get All Schedules (with pagination)",
+          "name": "Get All Days (with pagination)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/schedules?page=1&limit=9&search=08:00&dayOfWeek=1&sortBy=newest",
-              "host": ["{{baseUrl}}"],
-              "path": ["schedules"],
+              "raw": "{{localhost}}/days-of-week?page=1&limit=9&search=monday&sortBy=name-asc",
+              "host": ["{{localhost}}"],
+              "path": ["days-of-week"],
               "query": [
                 {
                   "key": "page",
@@ -562,37 +557,32 @@
                 },
                 {
                   "key": "search",
-                  "value": "08:00",
-                  "description": "Buscar por timeStart ou timeEnd"
-                },
-                {
-                  "key": "dayOfWeek",
-                  "value": "1",
-                  "description": "Filtrar por dia da semana (0-6, onde 0=domingo)"
+                  "value": "monday",
+                  "description": "Buscar por nome do dia"
                 },
                 {
                   "key": "sortBy",
-                  "value": "newest",
-                  "description": "Ordenação: newest, oldest, time-asc, time-desc"
+                  "value": "name-asc",
+                  "description": "Ordenação: newest, oldest, name-asc, name-desc"
                 }
               ]
             }
           }
         },
         {
-          "name": "Get All Schedules (without pagination)",
+          "name": "Get All Days (without pagination)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/schedules",
-              "host": ["{{baseUrl}}"],
-              "path": ["schedules"]
+              "raw": "{{localhost}}/days-of-week",
+              "host": ["{{localhost}}"],
+              "path": ["days-of-week"]
             }
           }
         },
         {
-          "name": "Create Schedule",
+          "name": "Create Day",
           "request": {
             "method": "POST",
             "header": [
@@ -603,29 +593,29 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"daysOfWeek\": [1, 3, 5],\n  \"timeStart\": \"08:00\",\n  \"timeEnd\": \"10:00\",\n  \"validFrom\": \"2025-01-01T00:00:00.000Z\",\n  \"validTo\": \"2025-12-31T23:59:59.000Z\"\n}"
+              "raw": "{\n  \"name\": \"saturday\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/schedules",
-              "host": ["{{baseUrl}}"],
-              "path": ["schedules"]
+              "raw": "{{localhost}}/days-of-week",
+              "host": ["{{localhost}}"],
+              "path": ["days-of-week"]
             }
           }
         },
         {
-          "name": "Get Schedule by ID",
+          "name": "Get Day by ID",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/schedules/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["schedules", "1"]
+              "raw": "{{localhost}}/days-of-week/1",
+              "host": ["{{localhost}}"],
+              "path": ["days-of-week", "1"]
             }
           }
         },
         {
-          "name": "Update Schedule",
+          "name": "Update Day",
           "request": {
             "method": "PATCH",
             "header": [
@@ -636,29 +626,29 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"timeStart\": \"09:00\",\n  \"timeEnd\": \"11:00\"\n}"
+              "raw": "{\n  \"name\": \"saturday\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/schedules/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["schedules", "1"]
+              "raw": "{{localhost}}/days-of-week/1",
+              "host": ["{{localhost}}"],
+              "path": ["days-of-week", "1"]
             }
           }
         },
         {
-          "name": "Delete Schedule",
+          "name": "Delete Day",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/schedules/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["schedules", "1"]
+              "raw": "{{localhost}}/days-of-week/1",
+              "host": ["{{localhost}}"],
+              "path": ["days-of-week", "1"]
             }
           }
         },
         {
-          "name": "Delete Multiple Schedules",
+          "name": "Delete Multiple Days",
           "request": {
             "method": "DELETE",
             "header": [
@@ -672,8 +662,79 @@
               "raw": "{\n  \"ids\": [1, 2, 3]\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/schedules",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/days-of-week",
+              "host": ["{{localhost}}"],
+              "path": ["days-of-week"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Schedules",
+      "item": [
+        {
+          "name": "Get Schedule Configuration",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{localhost}}/schedules",
+              "host": ["{{localhost}}"],
+              "path": ["schedules"]
+            }
+          }
+        },
+        {
+          "name": "Create Schedule Configuration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timeStart\": \"08:00\",\n  \"timeEnd\": \"17:00\",\n  \"validFrom\": \"2025-01-01T00:00:00.000Z\",\n  \"validTo\": \"2025-12-31T23:59:59.000Z\",\n  \"dayIds\": [1, 2, 3, 4, 5]\n}"
+            },
+            "url": {
+              "raw": "{{localhost}}/schedules",
+              "host": ["{{localhost}}"],
+              "path": ["schedules"]
+            }
+          }
+        },
+        {
+          "name": "Update Schedule Configuration",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timeStart\": \"09:00\",\n  \"timeEnd\": \"18:00\",\n  \"validFrom\": \"2025-02-01T00:00:00.000Z\",\n  \"validTo\": \"2025-12-31T23:59:59.000Z\",\n  \"dayIds\": [1, 3, 5]\n}"
+            },
+            "url": {
+              "raw": "{{localhost}}/schedules",
+              "host": ["{{localhost}}"],
+              "path": ["schedules"]
+            }
+          }
+        },
+        {
+          "name": "Delete Schedule Configuration",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{localhost}}/schedules",
+              "host": ["{{localhost}}"],
               "path": ["schedules"]
             }
           }
@@ -689,8 +750,8 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/dashboard",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{localhost}}/dashboard",
+              "host": ["{{localhost}}"],
               "path": ["dashboard"]
             }
           }
