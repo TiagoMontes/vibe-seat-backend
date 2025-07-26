@@ -188,4 +188,53 @@ export const scheduleRepository = {
       where: { id: existing.id },
     });
   },
+
+  // Atualiza apenas os dias da semana vinculados
+  updateDays: async (dayIds: number[]): Promise<ScheduleConfig> => {
+    const existing = await prisma.scheduleConfig.findFirst();
+    if (!existing) {
+      throw new Error('Nenhuma configuração encontrada para atualizar.');
+    }
+
+    // Verifica se todos os dayIds existem
+    const existingDays = await prisma.dayOfWeek.findMany({
+      where: { id: { in: dayIds } },
+    });
+
+    if (existingDays.length !== dayIds.length) {
+      const foundIds = existingDays.map(day => day.id);
+      const missingIds = dayIds.filter(id => !foundIds.includes(id));
+      throw new Error(`Dias da semana não encontrados: ${missingIds.join(', ')}`);
+    }
+
+    // Remove relacionamentos existentes
+    await prisma.dayOfWeek.updateMany({
+      where: { scheduleConfigId: existing.id },
+      data: { scheduleConfigId: null },
+    });
+
+    // Cria novos relacionamentos
+    await Promise.all(
+      dayIds.map(dayId =>
+        prisma.dayOfWeek.update({
+          where: { id: dayId },
+          data: { scheduleConfigId: existing.id },
+        })
+      )
+    );
+
+    // Busca a configuração atualizada com os dias relacionados
+    const updatedConfig = await prisma.scheduleConfig.findFirst({
+      where: { id: existing.id },
+      include: {
+        days: true,
+      },
+    });
+
+    if (!updatedConfig) {
+      throw new Error('Erro ao buscar configuração atualizada.');
+    }
+
+    return updatedConfig;
+  },
 };

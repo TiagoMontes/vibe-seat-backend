@@ -17,7 +17,7 @@ router.get('/my-appointments', appointmentController.getMyAppointments);
 router.get('/allStatus', appointmentController.getScheduledAppointments);
 
 // Buscar horários disponíveis (antes das rotas com parâmetros)
-router.get('/available-times', appointmentController.getAvailableTimes);
+router.post('/available-times', appointmentController.getAvailableTimes);
 
 // Cancelamento (usuário ou admin)
 router.patch('/:id/cancel', appointmentController.cancel);

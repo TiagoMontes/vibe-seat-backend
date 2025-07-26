@@ -9,7 +9,9 @@ router.use(authenticateJWT, isAdmin);
 
 router.post('/', scheduleController.create);
 router.get('/', scheduleController.get);
-router.patch('/', scheduleController.update);
-router.delete('/', scheduleController.delete);
+router.get('/:id', scheduleController.get);
+router.patch('/:id', scheduleController.update);
+router.patch('/:id/days', scheduleController.updateDays);
+router.delete('/:id', scheduleController.delete);
 
 export const scheduleRoutes = router;

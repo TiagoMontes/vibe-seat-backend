@@ -9,6 +9,7 @@ router.use(authenticateJWT, isAdmin);
 
 router.post('/', chairController.create);
 router.get('/', chairController.getAll);
+router.get('/insights', chairController.getInsights);
 router.get('/:id', chairController.getById);
 router.patch('/:id', chairController.update);
 router.delete('/:id', chairController.delete);

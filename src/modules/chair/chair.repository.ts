@@ -10,6 +10,44 @@ export const chairRepository = {
     return await prisma.chair.findMany();
   },
 
+  getInsights: async () => {
+    // Buscar total de cadeiras
+    const totalChairs = await prisma.chair.count();
+    
+    // Buscar contagem por status
+    const statusCounts = await prisma.chair.groupBy({
+      by: ['status'],
+      _count: {
+        status: true,
+      },
+    });
+
+    // Organizar os dados de forma mais clara
+    const insights = {
+      total: totalChairs,
+      active: 0,
+      maintenance: 0,
+      inactive: 0
+    };
+
+    // Mapear os resultados para as propriedades corretas
+    statusCounts.forEach(item => {
+      switch (item.status) {
+        case 'ACTIVE':
+          insights.active = item._count.status;
+          break;
+        case 'MAINTENANCE':
+          insights.maintenance = item._count.status;
+          break;
+        case 'INACTIVE':
+          insights.inactive = item._count.status;
+          break;
+      }
+    });
+
+    return insights;
+  },
+
   findById: async (id: number) => {
     return await prisma.chair.findUnique({ where: { id } });
   },

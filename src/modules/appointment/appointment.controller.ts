@@ -167,9 +167,10 @@ export const appointmentController = {
   },
 
   // GET /agendamentos/available-times
-  getAvailableTimes: async (req: Request<{}, {}, {}, { date: string; page?: string; limit?: string }>, res: Response) => {
+  getAvailableTimes: async (req: Request<{}, {}, { chairIds?: number[] }, { date: string; page?: string; limit?: string }>, res: Response) => {
     try {
       const { date, page, limit } = req.query;
+      const { chairIds } = req.body;
       
       if (!date) {
         return res.status(400).json({
@@ -210,7 +211,16 @@ export const appointmentController = {
         });
       }
 
-      const result = await appointmentService.getAvailableTimes(date, pageNumber, limitNumber);
+      // Validar chairIds se fornecidos
+      if (chairIds && (!Array.isArray(chairIds) || chairIds.some(id => !Number.isInteger(id) || id <= 0))) {
+        return res.status(400).json({
+          success: false,
+          message: 'chairIds deve ser um array de números inteiros positivos',
+          error: true
+        });
+      }
+
+      const result = await appointmentService.getAvailableTimes(date, pageNumber, limitNumber, chairIds);
       return res.status(200).json({
         success: true,
         message: 'Horários disponíveis encontrados',

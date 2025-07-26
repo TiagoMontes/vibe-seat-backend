@@ -61,6 +61,17 @@ export const scheduleController = {
     res: Response
   ) => {
     try {
+      const { id } = req.params;
+      
+      // Valida se o ID é 1 (singleton)
+      if (id !== '1') {
+        return res.status(400).json({
+          success: false,
+          message: 'ID inválido. A configuração de agenda é um singleton com ID = 1.',
+          error: true
+        });
+      }
+
       const updated = await scheduleService.update(req.body);
       return res.status(200).json({
         success: true,
@@ -88,6 +99,17 @@ export const scheduleController = {
     res: Response
   ) => {
     try {
+      const { id } = req.params;
+      
+      // Valida se o ID é 1 (singleton)
+      if (id !== '1') {
+        return res.status(400).json({
+          success: false,
+          message: 'ID inválido. A configuração de agenda é um singleton com ID = 1.',
+          error: true
+        });
+      }
+
       await scheduleService.remove();
       return res.status(200).json({
         success: true,
@@ -104,6 +126,47 @@ export const scheduleController = {
       return res.status(500).json({
         success: false,
         message: err.message || 'Erro ao remover configuração de agenda',
+        error: true
+      });
+    }
+  },
+
+  // Novo endpoint para gerenciar dias da semana
+  updateDays: async (
+    req: Request<{ id: string }, {}, { dayIds: number[] }>,
+    res: Response
+  ) => {
+    try {
+      const { id } = req.params;
+      const { dayIds } = req.body;
+      
+      // Valida se o ID é 1 (singleton)
+      if (id !== '1') {
+        return res.status(400).json({
+          success: false,
+          message: 'ID inválido. A configuração de agenda é um singleton com ID = 1.',
+          error: true
+        });
+      }
+
+      if (!dayIds || !Array.isArray(dayIds)) {
+        return res.status(400).json({
+          success: false,
+          message: 'dayIds deve ser um array de números',
+          error: true
+        });
+      }
+
+      const updated = await scheduleService.updateDays(dayIds);
+      return res.status(200).json({
+        success: true,
+        message: 'Dias da semana atualizados com sucesso',
+        data: updated
+      });
+    } catch (err: any) {
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Erro ao atualizar dias da semana',
         error: true
       });
     }

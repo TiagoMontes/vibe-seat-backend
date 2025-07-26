@@ -53,6 +53,23 @@ export const chairController = {
     }
   },
 
+  getInsights: async (req: Request, res: Response) => {
+    try {
+      const result = await chairService.getInsights();
+      return res.status(200).json({
+        success: true,
+        message: 'Insights listados com sucesso',
+        data: result
+      });
+    } catch (err: any) {
+      return res.status(500).json({
+        success: false,
+        message: err.message || 'Erro interno do servidor',
+        error: true
+      });
+    }
+  },
+
   getAll: async (req: Request<{}, {}, {}, ChairQueryParams>, res: Response) => {
     try {
       // Check if any pagination/filter parameters are provided

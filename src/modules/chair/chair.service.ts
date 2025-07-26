@@ -20,6 +20,9 @@ export const chairService = {
 
   getAll: () => chairRepository.findAll(),
 
+  getInsights: () => chairRepository.getInsights(),
+  
+
   getAllWithPagination: async (filters: ChairFilters): Promise<ChairWithPagination> => {
     // Execute all queries in parallel for better performance
     const [chairs, totalItems, stats] = await Promise.all([
