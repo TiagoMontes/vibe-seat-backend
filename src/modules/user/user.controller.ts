@@ -17,7 +17,10 @@ const validateAndParseQueryParams = (query: UserQueryParams): UserFilters => {
 
   // Validate status
   const validStatuses = ['pending', 'approved', 'rejected'];
-  const status = query.status && validStatuses.includes(query.status) ? query.status : undefined;
+  const status =
+    query.status && validStatuses.includes(query.status)
+      ? query.status
+      : undefined;
 
   // Parse roleId if provided
   let roleId: number | undefined;
@@ -29,8 +32,16 @@ const validateAndParseQueryParams = (query: UserQueryParams): UserFilters => {
   }
 
   // Validate sortBy
-  const validSortOptions = ['newest', 'oldest', 'username-asc', 'username-desc'];
-  const sortBy = query.sortBy && validSortOptions.includes(query.sortBy) ? query.sortBy : 'newest';
+  const validSortOptions = [
+    'newest',
+    'oldest',
+    'username-asc',
+    'username-desc',
+  ];
+  const sortBy =
+    query.sortBy && validSortOptions.includes(query.sortBy)
+      ? query.sortBy
+      : 'newest';
 
   // Sanitize search
   const search = query.search ? query.search.trim() : undefined;
@@ -53,13 +64,13 @@ export const userController = {
       return res.status(201).json({
         success: true,
         message: 'Usuário criado com sucesso',
-        data: user
+        data: user,
       });
     } catch (err: any) {
       return res.status(400).json({
         success: false,
         message: err.message || 'Erro ao criar usuário',
-        error: true
+        error: true,
       });
     }
   },
@@ -76,7 +87,7 @@ export const userController = {
         return res.status(200).json({
           success: true,
           message: 'Usuários listados com sucesso',
-          data: result
+          data: result,
         });
       } else {
         // Maintain backward compatibility - return all users without pagination
@@ -85,14 +96,14 @@ export const userController = {
           success: true,
           message: 'Usuários listados com sucesso',
           data: users,
-          total: users.length
+          total: users.length,
         });
       }
     } catch (err: any) {
       return res.status(500).json({
         success: false,
         message: err.message || 'Erro interno do servidor',
-        error: true
+        error: true,
       });
     }
   },
@@ -100,36 +111,36 @@ export const userController = {
   getById: async (req: Request<{ id: string }>, res: Response) => {
     try {
       const id = Number(req.params.id);
-      
+
       if (isNaN(id)) {
         return res.status(400).json({
           success: false,
           message: 'ID inválido',
-          error: true
+          error: true,
         });
       }
 
       const user = await userService.getById(id);
-      
+
       if (!user) {
         return res.status(404).json({
           success: false,
           message: 'Usuário não encontrado',
           data: null,
-          error: true
+          error: true,
         });
       }
 
       return res.status(200).json({
         success: true,
         message: 'Usuário encontrado',
-        data: user
+        data: user,
       });
     } catch (err: any) {
       return res.status(500).json({
         success: false,
         message: err.message || 'Erro interno do servidor',
-        error: true
+        error: true,
       });
     }
   },
@@ -137,12 +148,12 @@ export const userController = {
   delete: async (req: Request<{ id: string }>, res: Response) => {
     try {
       const id = Number(req.params.id);
-      
+
       if (isNaN(id)) {
         return res.status(400).json({
           success: false,
           message: 'ID inválido',
-          error: true
+          error: true,
         });
       }
 
@@ -150,20 +161,20 @@ export const userController = {
       return res.status(200).json({
         success: true,
         message: 'Usuário excluído com sucesso',
-        deletedId: id
+        deletedId: id,
       });
     } catch (err: any) {
       if (err.message === 'Usuário não encontrado') {
         return res.status(404).json({
           success: false,
           message: err.message,
-          error: true
+          error: true,
         });
       }
       return res.status(500).json({
         success: false,
         message: err.message || 'Erro interno do servidor',
-        error: true
+        error: true,
       });
     }
   },

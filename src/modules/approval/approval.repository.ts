@@ -2,12 +2,13 @@ import { prisma } from '@/lib/prisma';
 import type { ApprovalFilters, ApprovalStats } from './types';
 
 export const approvalRepository = {
-  findAll: () => prisma.userApproval.findMany({
-    include: { 
-      user: true, 
-      requestedRole: true,
-    },
-  }),
+  findAll: () =>
+    prisma.userApproval.findMany({
+      include: {
+        user: true,
+        requestedRole: true,
+      },
+    }),
 
   findManyWithPagination: async (filters: ApprovalFilters) => {
     const { page, limit, search, status, sortBy } = filters;
@@ -15,7 +16,7 @@ export const approvalRepository = {
 
     // Build where clause
     const where: any = {};
-    
+
     if (status) {
       where.status = status;
     }
@@ -62,7 +63,7 @@ export const approvalRepository = {
         user: {
           select: {
             id: true,
-            username: true
+            username: true,
           },
         },
         requestedRole: {
@@ -71,21 +72,22 @@ export const approvalRepository = {
             name: true,
           },
         },
-
       },
     });
 
     return results.map(result => ({
       ...result,
-      status: result.status as 'pending' | 'approved' | 'rejected'
+      status: result.status as 'pending' | 'approved' | 'rejected',
     }));
   },
 
-  countWithFilters: async (filters: Pick<ApprovalFilters, 'search' | 'status'>) => {
+  countWithFilters: async (
+    filters: Pick<ApprovalFilters, 'search' | 'status'>
+  ) => {
     const { search, status } = filters;
 
     const where: any = {};
-    
+
     if (status) {
       where.status = status;
     }
@@ -101,11 +103,13 @@ export const approvalRepository = {
     return await prisma.userApproval.count({ where });
   },
 
-  getStatsWithFilters: async (filters: Pick<ApprovalFilters, 'search' | 'status'>) => {
+  getStatsWithFilters: async (
+    filters: Pick<ApprovalFilters, 'search' | 'status'>
+  ) => {
     const { search, status } = filters;
 
     const where: any = {};
-    
+
     if (status) {
       where.status = status;
     }
@@ -133,11 +137,12 @@ export const approvalRepository = {
     } as ApprovalStats;
   },
 
-  findById: (id: number) => prisma.userApproval.findUnique({
-    where: { id },
-    include: { 
-      user: true, 
-      requestedRole: true,
-    },
-  }),
+  findById: (id: number) =>
+    prisma.userApproval.findUnique({
+      where: { id },
+      include: {
+        user: true,
+        requestedRole: true,
+      },
+    }),
 };

@@ -1,4 +1,10 @@
-import type { ChairInput, ChairUpdateInput, ChairFilters, ChairWithPagination, PaginationMeta } from '@/modules/chair/types';
+import type {
+  ChairInput,
+  ChairUpdateInput,
+  ChairFilters,
+  ChairWithPagination,
+  PaginationMeta,
+} from '@/modules/chair/types';
 import { chairRepository } from '@/modules/chair/chair.repository';
 import { prisma } from '@/lib/prisma';
 
@@ -21,9 +27,10 @@ export const chairService = {
   getAll: () => chairRepository.findAll(),
 
   getInsights: () => chairRepository.getInsights(),
-  
 
-  getAllWithPagination: async (filters: ChairFilters): Promise<ChairWithPagination> => {
+  getAllWithPagination: async (
+    filters: ChairFilters
+  ): Promise<ChairWithPagination> => {
     // Execute all queries in parallel for better performance
     const [chairs, totalItems, stats] = await Promise.all([
       chairRepository.findManyWithPagination(filters),

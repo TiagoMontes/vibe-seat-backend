@@ -45,4 +45,4 @@ export interface DayOfWeek {
 export interface DayOfWeekWithPagination {
   days: DayOfWeek[];
   pagination: PaginationMeta;
-} 
+}

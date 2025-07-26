@@ -16,7 +16,7 @@ export const appointmentRepository = {
 
   // Busca todos com detalhes (admin)
   findAllWithDetails: () =>
-    prisma.appointment.findMany({ 
+    prisma.appointment.findMany({
       include: {
         user: {
           select: {
@@ -39,7 +39,7 @@ export const appointmentRepository = {
 
   // Busca por usuário
   findByUser: (userId: number) =>
-    prisma.appointment.findMany({ 
+    prisma.appointment.findMany({
       where: { userId },
       include: {
         chair: {
@@ -57,7 +57,7 @@ export const appointmentRepository = {
 
   // Busca agendamentos SCHEDULED (admin vê todos)
   findScheduled: () =>
-    prisma.appointment.findMany({ 
+    prisma.appointment.findMany({
       where: { status: 'SCHEDULED' },
       include: {
         user: {
@@ -81,10 +81,10 @@ export const appointmentRepository = {
 
   // Busca agendamentos SCHEDULED do usuário
   findScheduledByUser: (userId: number) =>
-    prisma.appointment.findMany({ 
-      where: { 
+    prisma.appointment.findMany({
+      where: {
         userId,
-        status: 'SCHEDULED'
+        status: 'SCHEDULED',
       },
       include: {
         chair: {
@@ -99,8 +99,6 @@ export const appointmentRepository = {
         datetimeStart: 'asc', // Ordena por data/hora do agendamento
       },
     }),
-
-
 
   // Busca conflitos (cadeira OU usuário)
   findConflicts: (chairId: number, userId: number, start: Date, end: Date) =>
@@ -132,14 +130,14 @@ export const appointmentRepository = {
   findBookedTimes: async (date: string) => {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
-    
+
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
     return await prisma.appointment.findMany({
       where: {
         status: {
-          in: ['SCHEDULED', 'CONFIRMED'] // Inclui agendamentos confirmados e agendados
+          in: ['SCHEDULED', 'CONFIRMED'], // Inclui agendamentos confirmados e agendados
         },
         datetimeStart: {
           gte: startOfDay,
@@ -164,7 +162,7 @@ export const appointmentRepository = {
 
     // Build where clause
     const where: any = {};
-    
+
     if (status) {
       where.status = status;
     }
@@ -175,11 +173,30 @@ export const appointmentRepository = {
 
     if (search) {
       const searchTerm = search.trim();
-      where.OR = [
-        { user: { username: { contains: searchTerm } } },
-        { chair: { name: { contains: searchTerm } } },
-        { chair: { location: { contains: searchTerm } } },
-      ];
+      
+      // Search by ID using partial matching for numeric search terms
+      if (/^\d+$/.test(searchTerm)) {
+        // Get all appointments first, then filter by ID containing the search term
+        const allAppointments = await prisma.appointment.findMany({
+          where: {
+            ...(status && { status }),
+            ...(userId && { userId }),
+          },
+          select: { id: true }
+        });
+        
+        // Filter IDs that contain the search term
+        const matchingIds = allAppointments
+          .filter(apt => apt.id.toString().includes(searchTerm))
+          .map(apt => apt.id);
+        
+        if (matchingIds.length > 0) {
+          where.id = { in: matchingIds };
+        } else {
+          // No matching IDs found, return empty result
+          where.id = -1; // Invalid ID to return no results
+        }
+      }
     }
 
     // Build orderBy clause
@@ -224,11 +241,13 @@ export const appointmentRepository = {
     });
   },
 
-  countWithFilters: async (filters: Pick<AppointmentFilters, 'search' | 'status' | 'userId'>) => {
+  countWithFilters: async (
+    filters: Pick<AppointmentFilters, 'search' | 'status' | 'userId'>
+  ) => {
     const { search, status, userId } = filters;
 
     const where: any = {};
-    
+
     if (status) {
       where.status = status;
     }
@@ -239,22 +258,43 @@ export const appointmentRepository = {
 
     if (search) {
       const searchTerm = search.trim();
-      where.OR = [
-        { user: { username: { contains: searchTerm } } },
-        { chair: { name: { contains: searchTerm } } },
-        { chair: { location: { contains: searchTerm } } },
-      ];
+      
+      // Search by ID using partial matching for numeric search terms
+      if (/^\d+$/.test(searchTerm)) {
+        // Get all appointments first, then filter by ID containing the search term
+        const allAppointments = await prisma.appointment.findMany({
+          where: {
+            ...(status && { status }),
+            ...(userId && { userId }),
+          },
+          select: { id: true }
+        });
+        
+        // Filter IDs that contain the search term
+        const matchingIds = allAppointments
+          .filter(apt => apt.id.toString().includes(searchTerm))
+          .map(apt => apt.id);
+        
+        if (matchingIds.length > 0) {
+          where.id = { in: matchingIds };
+        } else {
+          // No matching IDs found, return empty result
+          where.id = -1; // Invalid ID to return no results
+        }
+      }
     }
 
     return await prisma.appointment.count({ where });
   },
 
-  getStatsWithFilters: async (filters: Pick<AppointmentFilters, 'search' | 'status' | 'userId'>): Promise<AppointmentStats> => {
+  getStatsWithFilters: async (
+    filters: Pick<AppointmentFilters, 'search' | 'status' | 'userId'>
+  ): Promise<AppointmentStats> => {
     const { search, status, userId } = filters;
 
     // Build WHERE conditions using AND array structure
     const whereConditions: any[] = [];
-    
+
     if (status) {
       whereConditions.push({ status });
     }
@@ -265,13 +305,30 @@ export const appointmentRepository = {
 
     if (search) {
       const searchTerm = search.trim();
-      whereConditions.push({
-        OR: [
-          { user: { username: { contains: searchTerm } } },
-          { chair: { name: { contains: searchTerm } } },
-          { chair: { location: { contains: searchTerm } } },
-        ]
-      });
+      
+      // Search by ID using partial matching for numeric search terms
+      if (/^\d+$/.test(searchTerm)) {
+        // Get all appointments first, then filter by ID containing the search term
+        const allAppointments = await prisma.appointment.findMany({
+          where: {
+            ...(status && { status }),
+            ...(userId && { userId }),
+          },
+          select: { id: true }
+        });
+        
+        // Filter IDs that contain the search term
+        const matchingIds = allAppointments
+          .filter(apt => apt.id.toString().includes(searchTerm))
+          .map(apt => apt.id);
+        
+        if (matchingIds.length > 0) {
+          whereConditions.push({ id: { in: matchingIds } });
+        } else {
+          // No matching IDs found, return empty result
+          whereConditions.push({ id: -1 }); // Invalid ID to return no results
+        }
+      }
     }
 
     const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
@@ -292,10 +349,10 @@ export const appointmentRepository = {
     let confirmed = 0;
 
     // Process the results
-    stats.forEach((stat) => {
+    stats.forEach(stat => {
       const count = stat._count.status;
       total += count;
-      
+
       switch (stat.status) {
         case 'SCHEDULED':
           scheduled = count;

@@ -14,4 +14,4 @@ router.get('/:id', dayOfWeekController.getById);
 router.patch('/:id', dayOfWeekController.update);
 router.delete('/:id', dayOfWeekController.delete);
 
-export const dayOfWeekRoutes = router; 
+export const dayOfWeekRoutes = router;

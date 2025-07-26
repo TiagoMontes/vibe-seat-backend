@@ -1,89 +1,80 @@
 import type { Request, Response } from 'express';
 import type {
   DayOfWeekInput,
-  DayOfWeekUpdateInput
+  DayOfWeekUpdateInput,
 } from '@/modules/dayOfWeek/types';
 import { dayOfWeekService } from '@/modules/dayOfWeek/dayOfWeek.service';
 
 export const dayOfWeekController = {
-  create: async (
-    req: Request<{}, {}, DayOfWeekInput>,
-    res: Response
-  ) => {
+  create: async (req: Request<{}, {}, DayOfWeekInput>, res: Response) => {
     try {
       const created = await dayOfWeekService.create(req.body);
       return res.status(201).json({
         success: true,
         message: 'Dia da semana criado com sucesso',
-        data: created
+        data: created,
       });
     } catch (err: any) {
       return res.status(400).json({
         success: false,
         message: err.message || 'Erro ao criar dia da semana',
-        error: true
+        error: true,
       });
     }
   },
 
-  getAll: async (    
-    req: Request,
-    res: Response
-  ) => {
+  getAll: async (req: Request, res: Response) => {
     try {
       const list = await dayOfWeekService.getAll();
-      
+
       return res.status(200).json({
         success: true,
         message: 'Dias da semana listados com sucesso',
         data: list,
-        total: list.length
+        total: list.length,
       });
     } catch (err: any) {
       return res.status(500).json({
         success: false,
         message: err.message || 'Erro interno do servidor',
-        error: true
+        error: true,
       });
     }
   },
 
-  getById: async (
-    req: Request<{ id: string }>,
-    res: Response
-  ) => {
+  getById: async (req: Request<{ id: string }>, res: Response) => {
     try {
       const id = Number(req.params.id);
-      
+
       if (isNaN(id)) {
         return res.status(400).json({
           success: false,
           message: 'ID inválido',
-          error: true
+          error: true,
         });
       }
 
       const day = await dayOfWeekService.getById(id);
-      
+
       if (!day) {
         return res.status(404).json({
           success: false,
           message: 'Dia da semana não encontrado',
           data: null,
-          error: true
+          error: true,
         });
       }
 
       return res.status(200).json({
         success: true,
         message: 'Dia da semana encontrado',
-        data: day
+        data: day,
       });
     } catch (err: any) {
       return res.status(500).json({
         success: false,
         message: err.message || 'Erro interno do servidor',
-        error: true
+        error: true,
       });
     }
   },
@@ -94,12 +85,12 @@ export const dayOfWeekController = {
   ) => {
     try {
       const id = Number(req.params.id);
-      
+
       if (isNaN(id)) {
         return res.status(400).json({
           success: false,
           message: 'ID inválido',
-          error: true
+          error: true,
         });
       }
 
@@ -107,36 +98,33 @@ export const dayOfWeekController = {
       return res.status(200).json({
         success: true,
         message: 'Dia da semana atualizado com sucesso',
-        data: updated
+        data: updated,
       });
     } catch (err: any) {
       if (err.message === 'Dia da semana não encontrado') {
         return res.status(404).json({
           success: false,
           message: err.message,
-          error: true
+          error: true,
         });
       }
       return res.status(400).json({
         success: false,
         message: err.message || 'Erro ao atualizar dia da semana',
-        error: true
+        error: true,
       });
     }
   },
 
-  delete: async (
-    req: Request<{ id: string }>,
-    res: Response
-  ) => {
+  delete: async (req: Request<{ id: string }>, res: Response) => {
     try {
       const id = Number(req.params.id);
-      
+
       if (isNaN(id)) {
         return res.status(400).json({
           success: false,
           message: 'ID inválido',
-          error: true
+          error: true,
         });
       }
 
@@ -144,33 +132,36 @@ export const dayOfWeekController = {
       return res.status(200).json({
         success: true,
         message: 'Dia da semana removido com sucesso',
-        deletedId: id
+        deletedId: id,
       });
     } catch (err: any) {
       if (err.message === 'Dia da semana não encontrado') {
         return res.status(404).json({
           success: false,
           message: err.message,
-          error: true
+          error: true,
         });
       }
       return res.status(500).json({
         success: false,
         message: err.message || 'Erro ao remover dia da semana',
-        error: true
+        error: true,
       });
     }
   },
 
-  deleteMany: async (req: Request<{}, {}, { ids: number[] }>, res: Response) => {
+  deleteMany: async (
+    req: Request<{}, {}, { ids: number[] }>,
+    res: Response
+  ) => {
     try {
       const { ids } = req.body;
-      
+
       if (!ids || !Array.isArray(ids) || ids.length === 0) {
         return res.status(400).json({
           success: false,
           message: 'Campo "ids" é obrigatório e deve ser um array não vazio',
-          error: true
+          error: true,
         });
       }
 
@@ -179,14 +170,14 @@ export const dayOfWeekController = {
         success: true,
         message: 'Dias da semana removidos com sucesso',
         deletedIds: ids,
-        count: ids.length
+        count: ids.length,
       });
     } catch (err: any) {
       return res.status(500).json({
         success: false,
         message: err.message || 'Erro interno do servidor',
-        error: true
+        error: true,
       });
     }
   },
-}; 
+};

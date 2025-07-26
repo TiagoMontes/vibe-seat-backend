@@ -1,6 +1,6 @@
 export interface TimeRange {
   start: string; // "08:00"
-  end: string;   // "10:00"
+  end: string; // "10:00"
 }
 
 export interface ScheduleConfigInput {

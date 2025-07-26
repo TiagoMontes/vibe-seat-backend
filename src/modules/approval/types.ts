@@ -50,8 +50,7 @@ export interface ApprovalWithPagination {
       id: number;
       name: string;
     };
-
   }>;
   pagination: PaginationMeta;
   stats: ApprovalStats;
-} 
+}

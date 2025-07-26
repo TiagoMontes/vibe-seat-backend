@@ -17,10 +17,15 @@ export const scheduleService = {
   },
 
   // Atualiza a configuração existente
-  update: async (data: ScheduleConfigUpdateInput, id?: string): Promise<ScheduleConfig> => {
+  update: async (
+    data: ScheduleConfigUpdateInput,
+    id?: string
+  ): Promise<ScheduleConfig> => {
     // Valida se o ID é 1 (singleton)
     if (id && id !== '1') {
-      throw new Error('ID inválido. A configuração de agenda é um singleton com ID = 1.');
+      throw new Error(
+        'ID inválido. A configuração de agenda é um singleton com ID = 1.'
+      );
     }
     return scheduleRepository.update(data);
   },
@@ -29,7 +34,9 @@ export const scheduleService = {
   remove: async (id?: string): Promise<void> => {
     // Valida se o ID é 1 (singleton)
     if (id && id !== '1') {
-      throw new Error('ID inválido. A configuração de agenda é um singleton com ID = 1.');
+      throw new Error(
+        'ID inválido. A configuração de agenda é um singleton com ID = 1.'
+      );
     }
     return scheduleRepository.remove();
   },

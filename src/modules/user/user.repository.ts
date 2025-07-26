@@ -24,7 +24,7 @@ export const userRepository = {
 
     // Build where clause
     const where: any = {};
-    
+
     if (status) {
       where.status = status;
     }
@@ -35,9 +35,7 @@ export const userRepository = {
 
     if (search) {
       const searchTerm = search.trim();
-      where.OR = [
-        { username: { contains: searchTerm } },
-      ];
+      where.OR = [{ username: { contains: searchTerm } }];
     }
 
     // Build orderBy clause
@@ -80,15 +78,17 @@ export const userRepository = {
 
     return results.map(result => ({
       ...result,
-      status: result.status as 'pending' | 'approved' | 'rejected'
+      status: result.status as 'pending' | 'approved' | 'rejected',
     }));
   },
 
-  countWithFilters: async (filters: Pick<UserFilters, 'search' | 'status' | 'roleId'>) => {
+  countWithFilters: async (
+    filters: Pick<UserFilters, 'search' | 'status' | 'roleId'>
+  ) => {
     const { search, status, roleId } = filters;
 
     const where: any = {};
-    
+
     if (status) {
       where.status = status;
     }
@@ -99,19 +99,19 @@ export const userRepository = {
 
     if (search) {
       const searchTerm = search.trim();
-      where.OR = [
-        { username: { contains: searchTerm } },
-      ];
+      where.OR = [{ username: { contains: searchTerm } }];
     }
 
     return await prisma.user.count({ where });
   },
 
-  getStatsWithFilters: async (filters: Pick<UserFilters, 'search' | 'status' | 'roleId'>) => {
+  getStatsWithFilters: async (
+    filters: Pick<UserFilters, 'search' | 'status' | 'roleId'>
+  ) => {
     const { search, status, roleId } = filters;
 
     const where: any = {};
-    
+
     if (status) {
       where.status = status;
     }
@@ -122,9 +122,7 @@ export const userRepository = {
 
     if (search) {
       const searchTerm = search.trim();
-      where.OR = [
-        { username: { contains: searchTerm } },
-      ];
+      where.OR = [{ username: { contains: searchTerm } }];
     }
 
     const [total, pending, approved, rejected] = await Promise.all([

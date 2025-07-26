@@ -29,7 +29,7 @@ app.get('/', (_req, res) => {
 // Middleware de tratamento de erros global
 // app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
 //   console.error('Erro não tratado:', err);
-  
+
 //   return res.status(500).json({
 //     success: false,
 //     message: err.message || 'Erro interno do servidor',

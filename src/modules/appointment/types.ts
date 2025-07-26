@@ -14,16 +14,16 @@ export interface AvailableTimesResponse {
     chairId: number;
     chairName: string;
     chairLocation?: string | null;
-    available: string[];      // Array of ISO strings for available slots
-    unavailable: string[];    // Array of ISO strings for booked slots
-    totalSlots: number;       // Total possible slots for the day
-    bookedSlots: number;      // Number of booked slots for this chair
-    availableSlots: number;   // Number of available slots for this chair
+    available: string[]; // Array of ISO strings for available slots
+    unavailable: string[]; // Array of ISO strings for booked slots
+    totalSlots: number; // Total possible slots for the day
+    bookedSlots: number; // Number of booked slots for this chair
+    availableSlots: number; // Number of available slots for this chair
   }>;
   pagination: PaginationMeta;
-  totalSlots: number;         // Total possible slots for the day
-  bookedSlots: number;        // Total booked slots across all chairs
-  availableSlots: number;     // Total available slots across all chairs
+  totalSlots: number; // Total possible slots for the day
+  bookedSlots: number; // Total booked slots across all chairs
+  availableSlots: number; // Total available slots across all chairs
 }
 
 // Pagination types for appointments

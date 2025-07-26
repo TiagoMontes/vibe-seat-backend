@@ -27,14 +27,19 @@ export const dayOfWeekService = {
     return day;
   },
 
-  update: async (id: number, data: DayOfWeekUpdateInput): Promise<DayOfWeek> => {
+  update: async (
+    id: number,
+    data: DayOfWeekUpdateInput
+  ): Promise<DayOfWeek> => {
     await dayOfWeekService.getById(id);
 
     // Se está atualizando o nome, verifica se já existe outro com esse nome
     if (data.name) {
       const existing = await dayOfWeekRepository.findByName(data.name);
       if (existing && existing.id !== id) {
-        throw new Error(`Já existe um dia da semana com o nome "${data.name}".`);
+        throw new Error(
+          `Já existe um dia da semana com o nome "${data.name}".`
+        );
       }
     }
 
@@ -49,4 +54,4 @@ export const dayOfWeekService = {
   removeMany: async (ids: number[]): Promise<void> => {
     await dayOfWeekRepository.removeMany(ids);
   },
-}; 
+};

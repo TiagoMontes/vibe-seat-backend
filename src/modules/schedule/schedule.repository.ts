@@ -12,17 +12,17 @@ const hasTimeOverlap = (ranges: TimeRange[]): boolean => {
     for (let j = i + 1; j < ranges.length; j++) {
       const range1 = ranges[i];
       const range2 = ranges[j];
-      
+
       const start1 = range1.start.split(':').map(Number);
       const end1 = range1.end.split(':').map(Number);
       const start2 = range2.start.split(':').map(Number);
       const end2 = range2.end.split(':').map(Number);
-      
+
       const time1Start = (start1[0] ?? 0) * 60 + (start1[1] ?? 0);
       const time1End = (end1[0] ?? 0) * 60 + (end1[1] ?? 0);
       const time2Start = (start2[0] ?? 0) * 60 + (start2[1] ?? 0);
       const time2End = (end2[0] ?? 0) * 60 + (end2[1] ?? 0);
-      
+
       if (time1Start < time2End && time1End > time2Start) {
         return true; // Há sobreposição
       }
@@ -52,7 +52,9 @@ export const scheduleRepository = {
     if (existingDays.length !== data.dayIds.length) {
       const foundIds = existingDays.map(day => day.id);
       const missingIds = data.dayIds.filter(id => !foundIds.includes(id));
-      throw new Error(`Dias da semana não encontrados: ${missingIds.join(', ')}`);
+      throw new Error(
+        `Dias da semana não encontrados: ${missingIds.join(', ')}`
+      );
     }
 
     // Cria o ScheduleConfig
@@ -129,7 +131,9 @@ export const scheduleRepository = {
       if (existingDays.length !== data.dayIds.length) {
         const foundIds = existingDays.map(day => day.id);
         const missingIds = data.dayIds.filter(id => !foundIds.includes(id));
-        throw new Error(`Dias da semana não encontrados: ${missingIds.join(', ')}`);
+        throw new Error(
+          `Dias da semana não encontrados: ${missingIds.join(', ')}`
+        );
       }
 
       // Remove relacionamentos existentes
@@ -204,7 +208,9 @@ export const scheduleRepository = {
     if (existingDays.length !== dayIds.length) {
       const foundIds = existingDays.map(day => day.id);
       const missingIds = dayIds.filter(id => !foundIds.includes(id));
-      throw new Error(`Dias da semana não encontrados: ${missingIds.join(', ')}`);
+      throw new Error(
+        `Dias da semana não encontrados: ${missingIds.join(', ')}`
+      );
     }
 
     // Remove relacionamentos existentes

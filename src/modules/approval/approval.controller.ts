@@ -1,8 +1,13 @@
 import type { Request, Response } from 'express';
 import { approvalService } from '@/modules/approval/approval.service';
-import type { ApprovalQueryParams, ApprovalFilters } from '@/modules/approval/types';
+import type {
+  ApprovalQueryParams,
+  ApprovalFilters,
+} from '@/modules/approval/types';
 
-const validateAndParseQueryParams = (query: ApprovalQueryParams): ApprovalFilters => {
+const validateAndParseQueryParams = (
+  query: ApprovalQueryParams
+): ApprovalFilters => {
   // Parse and validate page
   let page = parseInt(query.page || '1', 10);
   if (isNaN(page) || page < 1) {
@@ -10,18 +15,24 @@ const validateAndParseQueryParams = (query: ApprovalQueryParams): ApprovalFilter
   }
 
   // Parse and validate limit
-  let limit = parseInt(query.limit || '9', 10);
+  let limit = parseInt(query.limit || '8');
   if (isNaN(limit) || limit < 1 || limit > 50) {
-    limit = 9;
+    limit = 8;
   }
 
   // Validate status
   const validStatuses = ['pending', 'approved', 'rejected'];
-  const status = query.status && validStatuses.includes(query.status) ? query.status : undefined;
+  const status =
+    query.status && validStatuses.includes(query.status)
+      ? query.status
+      : undefined;
 
   // Validate sortBy
   const validSortOptions = ['newest', 'oldest', 'user-asc', 'user-desc'];
-  const sortBy = query.sortBy && validSortOptions.includes(query.sortBy) ? query.sortBy : 'newest';
+  const sortBy =
+    query.sortBy && validSortOptions.includes(query.sortBy)
+      ? query.sortBy
+      : 'newest';
 
   // Sanitize search
   const search = query.search ? query.search.trim() : undefined;
@@ -43,18 +54,21 @@ export const approvalController = {
         success: true,
         message: 'Aprovações pendentes listadas com sucesso',
         data: approvals,
-        total: approvals.length
+        total: approvals.length,
       });
     } catch (err: any) {
       return res.status(500).json({
         success: false,
         message: err.message || 'Erro interno do servidor',
-        error: true
+        error: true,
       });
     }
   },
 
-  getAll: async (req: Request<{}, {}, {}, ApprovalQueryParams>, res: Response) => {
+  getAll: async (
+    req: Request<{}, {}, {}, ApprovalQueryParams>,
+    res: Response
+  ) => {
     try {
       // Check if any pagination/filter parameters are provided
       const hasQueryParams = Object.keys(req.query).length > 0;
@@ -66,7 +80,7 @@ export const approvalController = {
         return res.status(200).json({
           success: true,
           message: 'Aprovações listadas com sucesso',
-          data: result
+          data: result,
         });
       } else {
         // Maintain backward compatibility - return all approvals without pagination
@@ -75,14 +89,14 @@ export const approvalController = {
           success: true,
           message: 'Aprovações listadas com sucesso',
           data: result,
-          total: result.length
+          total: result.length,
         });
       }
     } catch (err: any) {
       return res.status(500).json({
         success: false,
         message: err.message || 'Erro interno do servidor',
-        error: true
+        error: true,
       });
     }
   },
@@ -90,36 +104,36 @@ export const approvalController = {
   getById: async (req: Request<{ id: string }>, res: Response) => {
     try {
       const id = parseInt(req.params.id);
-      
+
       if (isNaN(id)) {
         return res.status(400).json({
           success: false,
           message: 'ID inválido',
-          error: true
+          error: true,
         });
       }
 
       const approval = await approvalService.getById(id);
-      
+
       if (!approval) {
         return res.status(404).json({
           success: false,
           message: 'Aprovação não encontrada',
           data: null,
-          error: true
+          error: true,
         });
       }
 
       return res.status(200).json({
         success: true,
         message: 'Aprovação encontrada',
-        data: approval
+        data: approval,
       });
     } catch (err: any) {
       return res.status(500).json({
         success: false,
         message: err.message || 'Erro interno do servidor',
-        error: true
+        error: true,
       });
     }
   },
@@ -134,7 +148,7 @@ export const approvalController = {
         return res.status(400).json({
           success: false,
           message: 'ID inválido',
-          error: true
+          error: true,
         });
       }
 
@@ -142,7 +156,7 @@ export const approvalController = {
         return res.status(400).json({
           success: false,
           message: "Status inválido. Use 'approved' ou 'rejected'.",
-          error: true
+          error: true,
         });
       }
 
@@ -151,24 +165,24 @@ export const approvalController = {
         status,
         approverId
       );
-      
+
       return res.status(200).json({
         success: true,
         message: `Aprovação ${status === 'approved' ? 'aprovada' : 'rejeitada'} com sucesso`,
-        data: result
+        data: result,
       });
     } catch (err: any) {
       if (err.message === 'Aprovação não encontrada') {
         return res.status(404).json({
           success: false,
           message: err.message,
-          error: true
+          error: true,
         });
       }
       return res.status(500).json({
         success: false,
         message: err.message || 'Erro interno do servidor',
-        error: true
+        error: true,
       });
     }
   },

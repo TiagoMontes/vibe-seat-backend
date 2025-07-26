@@ -9,4 +9,4 @@ router.use(authenticateJWT);
 // GET /dashboard
 router.get('/', dashboardController.getDashboardData);
 
-export const dashboardRoutes = router; 
+export const dashboardRoutes = router;

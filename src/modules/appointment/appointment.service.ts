@@ -1,6 +1,11 @@
 import { appointmentRepository } from './appointment.repository';
 import { prisma } from '@/lib/prisma';
-import type { AppointmentInput, AppointmentFilters, AppointmentWithPagination, PaginationMeta } from './types';
+import type {
+  AppointmentInput,
+  AppointmentFilters,
+  AppointmentWithPagination,
+  PaginationMeta,
+} from './types';
 
 const APPOINTMENT_DURATION_MINUTES = 30;
 const CANCELLATION_NOTICE_HOURS = 3;
@@ -27,8 +32,8 @@ export const appointmentService = {
     // 1.2) Disponibilidade global - verificar configuração de agenda
     const scheduleConfig = await prisma.scheduleConfig.findFirst({
       include: {
-        days: true
-      }
+        days: true,
+      },
     });
 
     if (!scheduleConfig) {
@@ -36,12 +41,24 @@ export const appointmentService = {
     }
 
     // Verificar se o dia da semana está configurado
-    const dayNames = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const dayNames = [
+      'Domingo',
+      'Segunda-feira',
+      'Terça-feira',
+      'Quarta-feira',
+      'Quinta-feira',
+      'Sexta-feira',
+      'Sábado',
+    ];
     const currentDayName = dayNames[start.getDay()];
-    
-    const dayConfig = scheduleConfig.days.find(day => day.name === currentDayName);
+
+    const dayConfig = scheduleConfig.days.find(
+      day => day.name === currentDayName
+    );
     if (!dayConfig) {
-      throw new Error(`Dia da semana (${currentDayName}) não configurado na agenda.`);
+      throw new Error(
+        `Dia da semana (${currentDayName}) não configurado na agenda.`
+      );
     }
 
     // Verificar se está dentro do período válido
@@ -54,8 +71,11 @@ export const appointmentService = {
 
     // Verificar se o horário está dentro dos timeRanges configurados
     const timeString = start.toTimeString().slice(0, 5); // "HH:MM"
-    const timeRanges = scheduleConfig.timeRanges as Array<{start: string, end: string}>;
-    
+    const timeRanges = scheduleConfig.timeRanges as Array<{
+      start: string;
+      end: string;
+    }>;
+
     const isTimeValid = timeRanges.some(range => {
       return timeString >= range.start && timeString < range.end;
     });
@@ -85,6 +105,75 @@ export const appointmentService = {
     return appointmentRepository.findByUser(userId);
   },
 
+  // 2.1.1) Listar agendamentos do usuário logado com paginação
+  getMyAppointmentsWithPagination: async (
+    userId: number,
+    filters: AppointmentFilters
+  ): Promise<AppointmentWithPagination> => {
+    // Force userId filter to current user for security
+    filters.userId = userId;
+
+    // Execute all queries in parallel for better performance
+    const [appointments, totalItems, stats] = await Promise.all([
+      appointmentRepository.findManyWithPagination(filters),
+      appointmentRepository.countWithFilters({
+        search: filters.search,
+        status: filters.status,
+        userId: filters.userId,
+      }),
+      appointmentRepository.getStatsWithFilters({
+        search: filters.search,
+        status: filters.status,
+        userId: filters.userId,
+      }),
+    ]);
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalItems / filters.limit);
+    const hasNextPage = filters.page < totalPages;
+    const hasPrevPage = filters.page > 1;
+    const nextPage = hasNextPage ? filters.page + 1 : null;
+    const prevPage = hasPrevPage ? filters.page - 1 : null;
+    const lastPage = totalPages;
+
+    const pagination: PaginationMeta = {
+      currentPage: filters.page,
+      totalPages,
+      totalItems,
+      itemsPerPage: filters.limit,
+      hasNextPage,
+      hasPrevPage,
+      nextPage,
+      prevPage,
+      lastPage,
+    };
+
+    // Calculate additional status-based counts for confirmed appointments
+    const now = new Date();
+    const confirmedAppointments = appointments.filter(
+      apt => apt.status === 'CONFIRMED'
+    );
+    const confirmedUpcoming = confirmedAppointments.filter(
+      apt => new Date(apt.datetimeStart) > now
+    ).length;
+    const confirmedDone = confirmedAppointments.filter(
+      apt => new Date(apt.datetimeStart) <= now
+    ).length;
+
+    // Enhance stats with time-based confirmed counts
+    const enhancedStats = {
+      ...stats,
+      confirmedUpcoming,
+      confirmedDone,
+    };
+
+    return {
+      appointments,
+      pagination,
+      stats: enhancedStats,
+    };
+  },
+
   // 2.2) Listar todos os agendamentos (para filtrar no frontend)
   getScheduledAppointments: async (userId: number, role: string) => {
     if (role === 'admin') {
@@ -94,7 +183,11 @@ export const appointmentService = {
   },
 
   // 2.1) Listar agendamentos com paginação
-  getAllWithPagination: async (filters: AppointmentFilters, currentUserId: number, userRole: string): Promise<AppointmentWithPagination> => {
+  getAllWithPagination: async (
+    filters: AppointmentFilters,
+    currentUserId: number,
+    userRole: string
+  ): Promise<AppointmentWithPagination> => {
     // If not admin, force userId filter to current user
     if (userRole !== 'admin') {
       filters.userId = currentUserId;
@@ -143,16 +236,21 @@ export const appointmentService = {
   },
 
   // 3) Buscar horários disponíveis para todas as cadeiras em uma data (com paginação)
-  getAvailableTimes: async (date: string, page: number = 1, limit: number = 9, chairIds?: number[]) => {
+  getAvailableTimes: async (
+    date: string,
+    page: number = 1,
+    limit: number = 9,
+    chairIds?: number[]
+  ) => {
     // 1. Buscar configuração de horário
     const scheduleConfig = await prisma.scheduleConfig.findFirst({
       include: {
-        days: true
-      }
+        days: true,
+      },
     });
 
     if (!scheduleConfig) {
-      return { 
+      return {
         chairs: [],
         pagination: {
           currentPage: page,
@@ -167,50 +265,60 @@ export const appointmentService = {
         },
         totalSlots: 0,
         bookedSlots: 0,
-        availableSlots: 0
+        availableSlots: 0,
       };
     }
 
     // 2. Buscar cadeiras ativas (com paginação ou por IDs específicos)
     const offset = (page - 1) * limit;
-    
+
     // Definir condições de busca
     const whereConditions: any = {
-      status: 'ACTIVE'
+      status: 'ACTIVE',
     };
-    
+
     // Se chairIds foram fornecidos, filtrar por eles
     if (chairIds && chairIds.length > 0) {
       whereConditions.id = {
-        in: chairIds
+        in: chairIds,
       };
     }
-    
+
     const [allChairs, totalChairs] = await Promise.all([
       prisma.chair.findMany({
         where: whereConditions,
         select: {
           id: true,
           name: true,
-          location: true
+          location: true,
         },
         orderBy: {
-          id: 'desc'  // Mais novo primeiro (ID mais alto)
+          id: 'desc', // Mais novo primeiro (ID mais alto)
         },
         skip: chairIds ? 0 : offset, // Não paginar quando IDs específicos
-        take: chairIds ? undefined : limit // Não limitar quando IDs específicos
+        take: chairIds ? undefined : limit, // Não limitar quando IDs específicos
       }),
       prisma.chair.count({
-        where: whereConditions
-      })
+        where: whereConditions,
+      }),
     ]);
 
     // 3. Verificar se o dia da semana está configurado
     const targetDate = new Date(date);
-    const dayNames = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const dayNames = [
+      'Domingo',
+      'Segunda-feira',
+      'Terça-feira',
+      'Quarta-feira',
+      'Quinta-feira',
+      'Sexta-feira',
+      'Sábado',
+    ];
     const currentDayName = dayNames[targetDate.getDay()];
-    
-    const dayConfig = scheduleConfig.days.find(day => day.name === currentDayName);
+
+    const dayConfig = scheduleConfig.days.find(
+      day => day.name === currentDayName
+    );
     if (!dayConfig) {
       const totalPages = Math.ceil(totalChairs / limit);
       const hasNextPage = page < totalPages;
@@ -218,8 +326,8 @@ export const appointmentService = {
       const nextPage = hasNextPage ? page + 1 : null;
       const prevPage = hasPrevPage ? page - 1 : null;
       const lastPage = totalPages;
-      
-      return { 
+
+      return {
         chairs: [],
         pagination: {
           currentPage: page,
@@ -234,7 +342,7 @@ export const appointmentService = {
         },
         totalSlots: 0,
         bookedSlots: 0,
-        availableSlots: 0
+        availableSlots: 0,
       };
     }
 
@@ -246,8 +354,8 @@ export const appointmentService = {
       const nextPage = hasNextPage ? page + 1 : null;
       const prevPage = hasPrevPage ? page - 1 : null;
       const lastPage = totalPages;
-      
-      return { 
+
+      return {
         chairs: [],
         pagination: {
           currentPage: page,
@@ -262,7 +370,7 @@ export const appointmentService = {
         },
         totalSlots: 0,
         bookedSlots: 0,
-        availableSlots: 0
+        availableSlots: 0,
       };
     }
     if (scheduleConfig.validTo && targetDate > scheduleConfig.validTo) {
@@ -272,8 +380,8 @@ export const appointmentService = {
       const nextPage = hasNextPage ? page + 1 : null;
       const prevPage = hasPrevPage ? page - 1 : null;
       const lastPage = totalPages;
-      
-      return { 
+
+      return {
         chairs: [],
         pagination: {
           currentPage: page,
@@ -288,7 +396,7 @@ export const appointmentService = {
         },
         totalSlots: 0,
         bookedSlots: 0,
-        availableSlots: 0
+        availableSlots: 0,
       };
     }
 
@@ -297,30 +405,35 @@ export const appointmentService = {
 
     // 6. Gerar todos os horários possíveis baseados nas configurações
     const allPossibleTimes: string[] = [];
-    const timeRanges = scheduleConfig.timeRanges as Array<{start: string, end: string}>;
-    
+    const timeRanges = scheduleConfig.timeRanges as Array<{
+      start: string;
+      end: string;
+    }>;
+
     for (const range of timeRanges) {
       const startTime = new Date(date + 'T' + range.start);
       const endTime = new Date(date + 'T' + range.end);
-      
+
       // Gerar slots de 30 minutos
       let currentTime = new Date(startTime);
       while (currentTime < endTime) {
         const timeString = currentTime.toISOString();
         allPossibleTimes.push(timeString);
-        
+
         // Avançar 30 minutos
-        currentTime.setMinutes(currentTime.getMinutes() + APPOINTMENT_DURATION_MINUTES);
+        currentTime.setMinutes(
+          currentTime.getMinutes() + APPOINTMENT_DURATION_MINUTES
+        );
       }
     }
 
     // 7. Organizar horários ocupados por cadeira
     const bookedTimesByChair: { [chairId: number]: string[] } = {};
-    
+
     bookedTimes.forEach(booking => {
       const chairId = booking.chairId;
       const timeString = booking.datetimeStart.toISOString();
-      
+
       if (!bookedTimesByChair[chairId]) {
         bookedTimesByChair[chairId] = [];
       }
@@ -330,12 +443,12 @@ export const appointmentService = {
     // 8. Calcular disponibilidade para cada cadeira da página atual
     const chairsAvailability = allChairs.map(chair => {
       const bookedTimesForChair = bookedTimesByChair[chair.id] || [];
-      
-      const available = allPossibleTimes.filter(time => 
-        !bookedTimesForChair.includes(time)
+
+      const available = allPossibleTimes.filter(
+        time => !bookedTimesForChair.includes(time)
       );
 
-      const unavailable = allPossibleTimes.filter(time => 
+      const unavailable = allPossibleTimes.filter(time =>
         bookedTimesForChair.includes(time)
       );
 
@@ -353,11 +466,12 @@ export const appointmentService = {
 
     // 9. Calcular estatísticas totais
     const totalBookedSlots = bookedTimes.length;
-    const totalAvailableSlots = (allPossibleTimes.length * allChairs.length) - totalBookedSlots;
+    const totalAvailableSlots =
+      allPossibleTimes.length * allChairs.length - totalBookedSlots;
 
     // Calcular paginação baseado no contexto (chairIds específicos ou paginação normal)
     let pagination;
-    
+
     if (chairIds && chairIds.length > 0) {
       // Quando chairIds específicos são fornecidos, não há paginação
       pagination = {
@@ -379,7 +493,7 @@ export const appointmentService = {
       const nextPage = hasNextPage ? page + 1 : null;
       const prevPage = hasPrevPage ? page - 1 : null;
       const lastPage = totalPages;
-      
+
       pagination = {
         currentPage: page,
         totalPages,

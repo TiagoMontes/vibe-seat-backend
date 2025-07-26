@@ -1,5 +1,9 @@
 import { prisma } from '@/lib/prisma';
-import type { ChairInput, ChairFilters, ChairStats } from '@/modules/chair/types';
+import type {
+  ChairInput,
+  ChairFilters,
+  ChairStats,
+} from '@/modules/chair/types';
 
 export const chairRepository = {
   create: async (data: ChairInput) => {
@@ -13,7 +17,7 @@ export const chairRepository = {
   getInsights: async () => {
     // Buscar total de cadeiras
     const totalChairs = await prisma.chair.count();
-    
+
     // Buscar contagem por status
     const statusCounts = await prisma.chair.groupBy({
       by: ['status'],
@@ -27,7 +31,7 @@ export const chairRepository = {
       total: totalChairs,
       active: 0,
       maintenance: 0,
-      inactive: 0
+      inactive: 0,
     };
 
     // Mapear os resultados para as propriedades corretas
@@ -62,11 +66,13 @@ export const chairRepository = {
   delete: async (id: number) => {
     // Verificar se existem agendamentos relacionados
     const appointmentsCount = await prisma.appointment.count({
-      where: { chairId: id }
+      where: { chairId: id },
     });
 
     if (appointmentsCount > 0) {
-      throw new Error(`Não é possível deletar a cadeira. Existem ${appointmentsCount} agendamento(s) relacionados a esta cadeira.`);
+      throw new Error(
+        `Não é possível deletar a cadeira. Existem ${appointmentsCount} agendamento(s) relacionados a esta cadeira.`
+      );
     }
 
     return await prisma.chair.delete({ where: { id } });
@@ -78,7 +84,7 @@ export const chairRepository = {
 
     // Build where clause
     const where: any = {};
-    
+
     if (status) {
       where.status = status;
     }
@@ -119,11 +125,13 @@ export const chairRepository = {
     });
   },
 
-  countWithFilters: async (filters: Pick<ChairFilters, 'search' | 'status'>) => {
+  countWithFilters: async (
+    filters: Pick<ChairFilters, 'search' | 'status'>
+  ) => {
     const { search, status } = filters;
 
     const where: any = {};
-    
+
     if (status) {
       where.status = status;
     }
@@ -140,12 +148,14 @@ export const chairRepository = {
     return await prisma.chair.count({ where });
   },
 
-  getStatsWithFilters: async (filters: Pick<ChairFilters, 'search' | 'status'>): Promise<ChairStats> => {
+  getStatsWithFilters: async (
+    filters: Pick<ChairFilters, 'search' | 'status'>
+  ): Promise<ChairStats> => {
     const { search, status } = filters;
 
     // Build the same where clause as other methods
     const where: any = {};
-    
+
     if (status) {
       where.status = status;
     }
@@ -175,10 +185,10 @@ export const chairRepository = {
     let inactive = 0;
 
     // Process the results
-    stats.forEach((stat) => {
+    stats.forEach(stat => {
       const count = stat._count.status;
       total += count;
-      
+
       switch (stat.status) {
         case 'ACTIVE':
           active = count;

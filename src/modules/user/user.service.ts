@@ -42,7 +42,9 @@ export const userService = {
 
   getAll: () => userRepository.findAll(),
 
-  getAllWithPagination: async (filters: UserFilters): Promise<UserWithPagination> => {
+  getAllWithPagination: async (
+    filters: UserFilters
+  ): Promise<UserWithPagination> => {
     // Execute all queries in parallel for better performance
     const [users, totalItems, stats] = await Promise.all([
       userRepository.findManyWithPagination(filters),

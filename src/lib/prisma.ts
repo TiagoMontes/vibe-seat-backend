@@ -10,22 +10,22 @@ export const hardDelete = {
   delete: async (model: any, where: any) => {
     return await model.delete({ where });
   },
-  
+
   // Hard delete many para qualquer model
   deleteMany: async (model: any, where: any) => {
     return await model.deleteMany({ where });
   },
-  
+
   // Buscar incluindo registros deletados
   findWithDeleted: async (model: any, where: any = {}) => {
     return await model.findMany({ where });
   },
-  
+
   // Restaurar registro deletado
   restore: async (model: any, where: any) => {
     return await model.update({
       where,
-      data: { deletedAt: null }
+      data: { deletedAt: null },
     });
-  }
+  },
 };

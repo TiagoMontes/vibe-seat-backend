@@ -48,4 +48,4 @@ export interface UserWithPagination {
   }>;
   pagination: PaginationMeta;
   stats: UserStats;
-} 
+}

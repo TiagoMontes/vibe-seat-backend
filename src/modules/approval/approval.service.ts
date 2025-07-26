@@ -1,6 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { approvalRepository } from './approval.repository';
-import type { ApprovalFilters, ApprovalWithPagination, PaginationMeta } from './types';
+import type {
+  ApprovalFilters,
+  ApprovalWithPagination,
+  PaginationMeta,
+} from './types';
 
 export const approvalService = {
   allPendingApprovals: async () => {
@@ -12,7 +16,9 @@ export const approvalService = {
 
   getAll: () => approvalRepository.findAll(),
 
-  getAllWithPagination: async (filters: ApprovalFilters): Promise<ApprovalWithPagination> => {
+  getAllWithPagination: async (
+    filters: ApprovalFilters
+  ): Promise<ApprovalWithPagination> => {
     // Execute all queries in parallel for better performance
     const [approvals, totalItems, stats] = await Promise.all([
       approvalRepository.findManyWithPagination(filters),
