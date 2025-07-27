@@ -1,17 +1,28 @@
 import { Router } from 'express';
 import { chairController } from '@/modules/chair/chair.controller';
-import { authenticateJWT } from '@/middleware/authMiddleware';
-import { isAdmin } from '@/middleware/authMiddleware';
+import {
+  authenticateJWT,
+  requireAdmin,
+  requireApproved,
+  requireAttendant,
+  requireUser,
+} from '@/middleware/authMiddleware';
 
 const router = Router();
 
-router.use(authenticateJWT, isAdmin);
+// All chair routes require authentication and approved status
+router.use(authenticateJWT, requireApproved);
 
-router.post('/', chairController.create);
-router.get('/', chairController.getAll);
-router.get('/insights', chairController.getInsights);
-router.get('/:id', chairController.getById);
-router.patch('/:id', chairController.update);
-router.delete('/:id', chairController.delete);
+// Only admins can create, update, delete chairs
+router.post('/', requireAdmin, chairController.create);
+router.patch('/:id', requireAdmin, chairController.update);
+router.delete('/:id', requireAdmin, chairController.delete);
+
+// Only admins can view insights (must come before /:id route)
+router.get('/insights', requireAttendant, chairController.getInsights);
+
+// Users can view chairs (for appointment booking)
+router.get('/', requireUser, chairController.getAll);
+router.get('/:id', requireUser, chairController.getById);
 
 export const chairRoutes = router;

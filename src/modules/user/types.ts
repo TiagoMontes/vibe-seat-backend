@@ -1,3 +1,36 @@
+export interface UserInput {
+  username: string;
+  password: string;
+  roleId: number;
+  // RF02 - Required fields
+  fullName?: string;
+  cpf?: string;
+  jobFunction?: string;
+  position?: string;
+  registration: string;
+  sector: string;
+  email: string;
+  phone: string;
+  gender: 'M' | 'F' | 'Outro';
+  birthDate: string; // ISO date string
+}
+
+export interface UserUpdateInput {
+  username?: string;
+  password?: string;
+  roleId?: number;
+  fullName?: string;
+  cpf?: string;
+  jobFunction?: string;
+  position?: string;
+  registration?: string;
+  sector?: string;
+  email?: string;
+  phone?: string;
+  gender?: 'M' | 'F' | 'Outro';
+  birthDate?: string; // ISO date string
+}
+
 export interface UserQueryParams {
   page?: string;
   limit?: string;
@@ -41,6 +74,16 @@ export interface UserWithPagination {
     username: string;
     status: 'pending' | 'approved' | 'rejected';
     roleId: number;
+    fullName: string;
+    cpf: string;
+    jobFunction: string;
+    position: string;
+    registration: string;
+    sector: string;
+    email: string;
+    phone: string;
+    gender: string;
+    birthDate: Date;
     role?: {
       id: number;
       name: string;

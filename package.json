@@ -11,7 +11,10 @@
     "seed:admin": "bun run src/scripts/seed-admin.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:performance": "artillery run tests/performance/artillery.yml"
+    "test:performance": "artillery run tests/performance/artillery.yml",
+    "prisma:migrate:docker": "docker-compose run --rm app bun run prisma:migrate",
+    "prisma:studio:docker": "docker-compose run --rm app bun run prisma:studio",
+    "prisma:generate:docker": "docker-compose run --rm app bun run prisma:generate"
   },
   "devDependencies": {
     "@types/bun": "latest",

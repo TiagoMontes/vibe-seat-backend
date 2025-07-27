@@ -3,12 +3,18 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'default_secret';
 
 export const authService = {
-  generateToken: (user: { id: number; username: string; role: string }) => {
+  generateToken: (user: {
+    id: number;
+    username: string;
+    role: string;
+    status: string;
+  }) => {
     return jwt.sign(
       {
         id: user.id,
         username: user.username,
         role: user.role,
+        status: user.status,
       },
       JWT_SECRET,
       { expiresIn: '1d' }

@@ -1,14 +1,27 @@
 import { Router } from 'express';
 import { approvalController } from '@/modules/approval/approval.controller';
-import { authenticateJWT, isAdmin } from '@/middleware/authMiddleware';
+import {
+  authenticateJWT,
+  requireApproved,
+  requireAttendant,
+} from '@/middleware/authMiddleware';
 
 const router = Router();
 
-router.use(authenticateJWT, isAdmin);
+// All routes require authentication and approved status
+router.use(authenticateJWT, requireApproved);
 
-router.get('/', approvalController.getAll);
-router.get('/pending', approvalController.getAllPendingApprovals);
-router.get('/:id', approvalController.getById);
-router.patch('/:id', isAdmin, approvalController.updateStatus);
+// Attendants can approve/reject user registrations
+router.get('/', requireAttendant, approvalController.getAll);
+router.get(
+  '/pending',
+  requireAttendant,
+  approvalController.getAllPendingApprovals
+);
+router.get('/:id', requireAttendant, approvalController.getById);
+
+// Only admins can approve attendant registrations and grant/revoke attendant permissions
+// Attendants can approve regular user registrations
+router.patch('/:id', requireAttendant, approvalController.updateStatus);
 
 export const approvalRoutes = router;

@@ -758,3 +758,124 @@ PATCH /approvals/1
   "status": "approved"
 }
 ```
+
+## User Management
+
+### Update User (PATCH)
+
+**Endpoint:** `PATCH /users/:id`
+
+**Description:** Updates a user's information. Users can update their own data, while admins can update any user's data.
+
+**Authentication:** Required (JWT token)
+
+**Authorization:**
+
+- Users can only update their own data
+- Admins can update any user's data
+
+**Request Body:** (All fields are optional - only send the fields you want to update)
+
+```json
+{
+  "username": "new_username",
+  "password": "new_password",
+  "roleId": 2,
+  "fullName": "New Full Name",
+  "cpf": "123.456.789-00",
+  "jobFunction": "New Job Function",
+  "position": "New Position",
+  "registration": "NEW123",
+  "sector": "New Sector",
+  "email": "newemail@example.com",
+  "phone": "(11) 99999-9999",
+  "gender": "M",
+  "birthDate": "1990-01-01"
+}
+```
+
+**Response (Success - 200):**
+
+```json
+{
+  "success": true,
+  "message": "Usuário atualizado com sucesso",
+  "data": {
+    "id": 1,
+    "username": "new_username",
+    "status": "approved",
+    "roleId": 2,
+    "fullName": "New Full Name",
+    "cpf": "123.456.789-00",
+    "jobFunction": "New Job Function",
+    "position": "New Position",
+    "registration": "NEW123",
+    "sector": "New Sector",
+    "email": "newemail@example.com",
+    "phone": "(11) 99999-9999",
+    "gender": "M",
+    "birthDate": "1990-01-01T00:00:00.000Z",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T12:00:00.000Z"
+  }
+}
+```
+
+**Response (User Not Found - 404):**
+
+```json
+{
+  "success": false,
+  "message": "Usuário não encontrado",
+  "error": true
+}
+```
+
+**Response (Validation Error - 400):**
+
+```json
+{
+  "success": false,
+  "message": "E-mail inválido",
+  "error": true
+}
+```
+
+**Response (Authorization Error - 403):**
+
+```json
+{
+  "success": false,
+  "message": "Acesso negado. Você só pode atualizar seus próprios dados.",
+  "error": true
+}
+```
+
+**Example Usage:**
+
+```bash
+# Update user's email and phone
+curl -X PATCH http://localhost:3000/users/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "newemail@example.com",
+    "phone": "(11) 88888-8888"
+  }'
+
+# Update user's password
+curl -X PATCH http://localhost:3000/users/1 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "password": "new_secure_password"
+  }'
+```
+
+**Notes:**
+
+- Only send the fields you want to update
+- Password will be automatically hashed
+- Unique fields (username, email, cpf, registration) will be validated for duplicates
+- Date fields should be in ISO format (YYYY-MM-DD)
+- Gender must be one of: "M", "F", "Outro"

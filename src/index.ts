@@ -26,26 +26,6 @@ app.get('/', (_req, res) => {
   res.send('API do agendamento online está no ar');
 });
 
-// Middleware de tratamento de erros global
-// app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-//   console.error('Erro não tratado:', err);
-
-//   return res.status(500).json({
-//     success: false,
-//     message: err.message || 'Erro interno do servidor',
-//     error: true
-//   });
-// });
-
-// // Middleware para rotas não encontradas
-// app.use('*', (req, res) => {
-//   return res.status(404).json({
-//     success: false,
-//     message: 'Rota não encontrada',
-//     error: true
-//   });
-// });
-
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);

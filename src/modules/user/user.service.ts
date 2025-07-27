@@ -1,23 +1,50 @@
 import { userRepository } from '@/modules/user/user.repository';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
-import type { UserFilters, UserWithPagination, PaginationMeta } from './types';
+import type {
+  UserFilters,
+  UserWithPagination,
+  PaginationMeta,
+  UserInput,
+  UserUpdateInput,
+} from './types';
 
 export const userService = {
-  create: async (username: string, password: string, roleId: number) => {
-    const existingUser = await userRepository.findByUsername(username);
-    if (existingUser) throw new Error('Username already taken');
+  create: async (input: UserInput) => {
+    // Check for existing unique fields
+    const [existingUsername, existingCpf, existingEmail, existingRegistration] =
+      await Promise.all([
+        userRepository.findByUsername(input.username),
+        prisma.user.findUnique({ where: { cpf: input.cpf } }),
+        prisma.user.findUnique({ where: { email: input.email } }),
+        prisma.user.findUnique({ where: { registration: input.registration } }),
+      ]);
 
-    const hashed = await bcrypt.hash(password, 10);
+    if (existingUsername) throw new Error('Username já está em uso');
+    if (existingCpf) throw new Error('CPF já está cadastrado');
+    if (existingEmail) throw new Error('E-mail já está cadastrado');
+    if (existingRegistration) throw new Error('Matrícula já está cadastrada');
+
+    const hashed = await bcrypt.hash(input.password, 10);
 
     // Criar usuário e approval em uma transação
     const result = await prisma.$transaction(async tx => {
       // Criar o usuário
       const user = await tx.user.create({
         data: {
-          username,
+          username: input.username,
           password: hashed,
-          roleId,
+          roleId: input.roleId,
+          fullName: input.fullName,
+          cpf: input.cpf,
+          jobFunction: input.jobFunction,
+          position: input.position,
+          registration: input.registration,
+          sector: input.sector,
+          email: input.email,
+          phone: input.phone,
+          gender: input.gender,
+          birthDate: new Date(input.birthDate),
         },
       });
 
@@ -25,7 +52,7 @@ export const userService = {
       await tx.userApproval.create({
         data: {
           userId: user.id,
-          requestedRoleId: roleId,
+          requestedRoleId: input.roleId,
           status: 'pending',
         },
       });
@@ -88,6 +115,98 @@ export const userService = {
   },
 
   getById: (id: number) => userRepository.findById(id),
+
+  update: async (id: number, input: UserUpdateInput) => {
+    // Check if user exists
+    const existingUser = await userRepository.findById(id);
+    if (!existingUser) {
+      throw new Error('Usuário não encontrado');
+    }
+
+    // Prepare update data
+    const updateData: any = {};
+
+    // Handle each field that might be updated
+    if (input.username !== undefined) {
+      // Check if username is already taken by another user
+      const existingUsername = await userRepository.findByUsername(input.username);
+      if (existingUsername && existingUsername.id !== id) {
+        throw new Error('Username já está em uso');
+      }
+      updateData.username = input.username;
+    }
+
+    if (input.password !== undefined) {
+      updateData.password = await bcrypt.hash(input.password, 10);
+    }
+
+    if (input.roleId !== undefined) {
+      updateData.roleId = input.roleId;
+    }
+
+    if (input.fullName !== undefined) {
+      updateData.fullName = input.fullName;
+    }
+
+    if (input.cpf !== undefined) {
+      // Check if CPF is already taken by another user
+      const existingCpf = await prisma.user.findUnique({ where: { cpf: input.cpf } });
+      if (existingCpf && existingCpf.id !== id) {
+        throw new Error('CPF já está cadastrado');
+      }
+      updateData.cpf = input.cpf;
+    }
+
+    if (input.jobFunction !== undefined) {
+      updateData.jobFunction = input.jobFunction;
+    }
+
+    if (input.position !== undefined) {
+      updateData.position = input.position;
+    }
+
+    if (input.registration !== undefined) {
+      // Check if registration is already taken by another user
+      const existingRegistration = await prisma.user.findUnique({ where: { registration: input.registration } });
+      if (existingRegistration && existingRegistration.id !== id) {
+        throw new Error('Matrícula já está cadastrada');
+      }
+      updateData.registration = input.registration;
+    }
+
+    if (input.sector !== undefined) {
+      updateData.sector = input.sector;
+    }
+
+    if (input.email !== undefined) {
+      // Check if email is already taken by another user
+      const existingEmail = await prisma.user.findUnique({ where: { email: input.email } });
+      if (existingEmail && existingEmail.id !== id) {
+        throw new Error('E-mail já está cadastrado');
+      }
+      updateData.email = input.email;
+    }
+
+    if (input.phone !== undefined) {
+      updateData.phone = input.phone;
+    }
+
+    if (input.gender !== undefined) {
+      updateData.gender = input.gender;
+    }
+
+    if (input.birthDate !== undefined) {
+      updateData.birthDate = new Date(input.birthDate);
+    }
+
+    // If no fields to update, return the existing user
+    if (Object.keys(updateData).length === 0) {
+      return existingUser;
+    }
+
+    // Update the user
+    return await userRepository.update(id, updateData);
+  },
 
   delete: (id: number) => userRepository.delete(id),
 };

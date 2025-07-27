@@ -35,6 +35,17 @@ model User {
   password     String
   status       String         @default("pending") // "pending", "approved", "rejected"
   roleId       Int
+  // RF02 - Required fields (temporarily optional for migration)
+  fullName     String?        // Nome completo
+  cpf          String?        @unique // CPF
+  jobFunction  String?        // Função
+  position     String?        // Cargo
+  registration String?        @unique // Matrícula
+  sector       String?        // Setor
+  email        String?        @unique // E-mail
+  phone        String?        // Telefone
+  gender       String?        // Sexo
+  birthDate    DateTime?      // Data de nascimento
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   deletedAt    DateTime?

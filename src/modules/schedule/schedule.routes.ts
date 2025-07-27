@@ -1,17 +1,25 @@
 import { Router } from 'express';
 import { scheduleController } from '@/modules/schedule/schedule.controller';
-import { authenticateJWT, isAdmin } from '@/middleware/authMiddleware';
+import {
+  authenticateJWT,
+  requireAdmin,
+  requireApproved,
+  requireUser,
+} from '@/middleware/authMiddleware';
 
 const router = Router();
 
-// Protege todas as rotas: apenas admins podem CRUD de disponibilidades
-router.use(authenticateJWT, isAdmin);
+// All routes require authentication and approved status
+router.use(authenticateJWT, requireApproved);
 
-router.post('/', scheduleController.create);
-router.get('/', scheduleController.get);
-router.get('/:id', scheduleController.get);
-router.patch('/:id', scheduleController.update);
-router.patch('/:id/days', scheduleController.updateDays);
-router.delete('/:id', scheduleController.delete);
+// Only admins can modify schedule configuration
+router.post('/', requireAdmin, scheduleController.create);
+router.patch('/:id', requireAdmin, scheduleController.update);
+router.patch('/:id/days', requireAdmin, scheduleController.updateDays);
+router.delete('/:id', requireAdmin, scheduleController.delete);
+
+// Users can view schedule for appointment booking
+router.get('/', requireUser, scheduleController.get);
+router.get('/:id', requireUser, scheduleController.get);
 
 export const scheduleRoutes = router;

@@ -1,17 +1,25 @@
 import { Router } from 'express';
 import { dayOfWeekController } from '@/modules/dayOfWeek/dayOfWeek.controller';
-import { authenticateJWT, isAdmin } from '@/middleware/authMiddleware';
+import {
+  authenticateJWT,
+  requireAdmin,
+  requireApproved,
+  requireUser,
+} from '@/middleware/authMiddleware';
 
 const router = Router();
 
-// Protege todas as rotas: apenas admins podem CRUD de dias da semana
-router.use(authenticateJWT, isAdmin);
+// All routes require authentication and approved status
+router.use(authenticateJWT, requireApproved);
 
-router.post('/', dayOfWeekController.create);
-router.get('/', dayOfWeekController.getAll);
-router.delete('/bulk-delete', dayOfWeekController.deleteMany);
-router.get('/:id', dayOfWeekController.getById);
-router.patch('/:id', dayOfWeekController.update);
-router.delete('/:id', dayOfWeekController.delete);
+// Only admins can modify days of week
+router.post('/', requireAdmin, dayOfWeekController.create);
+router.patch('/:id', requireAdmin, dayOfWeekController.update);
+router.delete('/bulk-delete', requireAdmin, dayOfWeekController.deleteMany);
+router.delete('/:id', requireAdmin, dayOfWeekController.delete);
+
+// Users can view available days for appointment booking
+router.get('/', requireUser, dayOfWeekController.getAll);
+router.get('/:id', requireUser, dayOfWeekController.getById);
 
 export const dayOfWeekRoutes = router;

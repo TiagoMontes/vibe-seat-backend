@@ -10,11 +10,15 @@ await $`docker exec backend-app-2 bun install`;
 await $`docker exec backend-app-3 bun install`;
 await $`docker exec backend-app-4 bun install`;
 
-console.log('🗄️ Executando migrations em todos os containers...');
-await $`docker exec backend-app-1 bun run prisma:migrate`;
-await $`docker exec backend-app-2 bun run prisma:migrate`;
-await $`docker exec backend-app-3 bun run prisma:migrate`;
-await $`docker exec backend-app-4 bun run prisma:migrate`;
+console.log('🗄️ Gerando cliente Prisma e aplicando migrations...');
+await $`docker exec backend-app-1 bunx prisma generate`;
+await $`docker exec backend-app-1 bunx prisma migrate deploy`;
+await $`docker exec backend-app-2 bunx prisma generate`;
+await $`docker exec backend-app-3 bunx prisma generate`;
+await $`docker exec backend-app-4 bunx prisma generate`;
+
+console.log('🌱 Executando seed do admin...');
+await $`docker exec backend-app-1 bun run seed:admin`;
 
 console.log('🔗 Entrando no container principal...');
 await $`docker exec -it backend-app-1 bash`;

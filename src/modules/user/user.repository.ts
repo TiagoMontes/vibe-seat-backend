@@ -35,7 +35,15 @@ export const userRepository = {
 
     if (search) {
       const searchTerm = search.trim();
-      where.OR = [{ username: { contains: searchTerm } }];
+      where.OR = [
+        { username: { contains: searchTerm } },
+        { fullName: { contains: searchTerm } },
+        { email: { contains: searchTerm } },
+        { cpf: { contains: searchTerm } },
+        { registration: { contains: searchTerm } },
+        { sector: { contains: searchTerm } },
+        { position: { contains: searchTerm } },
+      ];
     }
 
     // Build orderBy clause
@@ -67,6 +75,17 @@ export const userRepository = {
         username: true,
         status: true,
         roleId: true,
+        fullName: true,
+        cpf: true,
+        jobFunction: true,
+        position: true,
+        registration: true,
+        sector: true,
+        email: true,
+        phone: true,
+        gender: true,
+        birthDate: true,
+        createdAt: true,
         role: {
           select: {
             id: true,
@@ -99,7 +118,15 @@ export const userRepository = {
 
     if (search) {
       const searchTerm = search.trim();
-      where.OR = [{ username: { contains: searchTerm } }];
+      where.OR = [
+        { username: { contains: searchTerm } },
+        { fullName: { contains: searchTerm } },
+        { email: { contains: searchTerm } },
+        { cpf: { contains: searchTerm } },
+        { registration: { contains: searchTerm } },
+        { sector: { contains: searchTerm } },
+        { position: { contains: searchTerm } },
+      ];
     }
 
     return await prisma.user.count({ where });
@@ -122,7 +149,15 @@ export const userRepository = {
 
     if (search) {
       const searchTerm = search.trim();
-      where.OR = [{ username: { contains: searchTerm } }];
+      where.OR = [
+        { username: { contains: searchTerm } },
+        { fullName: { contains: searchTerm } },
+        { email: { contains: searchTerm } },
+        { cpf: { contains: searchTerm } },
+        { registration: { contains: searchTerm } },
+        { sector: { contains: searchTerm } },
+        { position: { contains: searchTerm } },
+      ];
     }
 
     const [total, pending, approved, rejected] = await Promise.all([
@@ -142,6 +177,13 @@ export const userRepository = {
 
   findById: async (id: number) => {
     return prisma.user.findUnique({ where: { id } });
+  },
+
+  update: async (id: number, data: any) => {
+    return prisma.user.update({
+      where: { id },
+      data,
+    });
   },
 
   delete: async (id: number) => {

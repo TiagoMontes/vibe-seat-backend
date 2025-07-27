@@ -18,6 +18,27 @@ export const appointmentService = {
       start.getTime() + APPOINTMENT_DURATION_MINUTES * 60000
     );
 
+    // 1.0) Verificar se o usuário já tem appointment ativo (SCHEDULED ou CONFIRMED)
+    const now = new Date();
+    const activeAppointments = await prisma.appointment.findMany({
+      where: {
+        userId,
+        status: {
+          in: ['SCHEDULED', 'CONFIRMED'],
+        },
+        // Considerar apenas appointments futuros ou atuais
+        datetimeStart: {
+          gte: now,
+        },
+      },
+    });
+
+    if (activeAppointments.length > 0) {
+      throw new Error(
+        'Você já possui um agendamento ativo. Cancele ou aguarde a conclusão do agendamento atual para criar um novo.'
+      );
+    }
+
     // 1.1) Conflitos
     const conflicts = await appointmentRepository.findConflicts(
       input.chairId,

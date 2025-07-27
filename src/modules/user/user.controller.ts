@@ -1,6 +1,11 @@
 import type { Request, Response } from 'express';
 import { userService } from '@/modules/user/user.service';
-import type { UserQueryParams, UserFilters } from '@/modules/user/types';
+import type {
+  UserQueryParams,
+  UserFilters,
+  UserInput,
+  UserUpdateInput,
+} from '@/modules/user/types';
 
 const validateAndParseQueryParams = (query: UserQueryParams): UserFilters => {
   // Parse and validate page
@@ -57,10 +62,78 @@ const validateAndParseQueryParams = (query: UserQueryParams): UserFilters => {
 };
 
 export const userController = {
-  create: async (req: Request, res: Response) => {
+  create: async (req: Request<{}, {}, UserInput>, res: Response) => {
     try {
-      const { username, password, roleId } = req.body;
-      const user = await userService.create(username, password, roleId);
+      // Validate required fields
+      const requiredFields = [
+        'username',
+        'password',
+        'roleId',
+        'fullName',
+        'cpf',
+        'jobFunction',
+        'position',
+        'registration',
+        'sector',
+        'email',
+        'phone',
+        'gender',
+        'birthDate',
+      ];
+
+      for (const field of requiredFields) {
+        if (!req.body[field as keyof UserInput]) {
+          return res.status(400).json({
+            success: false,
+            message: `Campo obrigatório ausente: ${field}`,
+            error: true,
+          });
+        }
+      }
+
+      // Additional validation
+      const { email, cpf, gender, birthDate } = req.body;
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          message: 'E-mail inválido',
+          error: true,
+        });
+      }
+
+      // CPF validation (basic format)
+      const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/;
+      if (!cpfRegex.test(cpf || '')) {
+        return res.status(400).json({
+          success: false,
+          message: 'CPF deve estar no formato XXX.XXX.XXX-XX ou apenas números',
+          error: true,
+        });
+      }
+
+      // Gender validation
+      if (!['M', 'F', 'Outro'].includes(gender)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Sexo deve ser M, F ou Outro',
+          error: true,
+        });
+      }
+
+      // Birth date validation
+      const birthDateObj = new Date(birthDate);
+      if (isNaN(birthDateObj.getTime())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Data de nascimento inválida',
+          error: true,
+        });
+      }
+
+      const user = await userService.create(req.body);
       return res.status(201).json({
         success: true,
         message: 'Usuário criado com sucesso',
@@ -140,6 +213,88 @@ export const userController = {
       return res.status(500).json({
         success: false,
         message: err.message || 'Erro interno do servidor',
+        error: true,
+      });
+    }
+  },
+
+  update: async (req: Request<{ id: string }, {}, UserUpdateInput>, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+
+      if (isNaN(id)) {
+        return res.status(400).json({
+          success: false,
+          message: 'ID inválido',
+          error: true,
+        });
+      }
+
+      // Validate input fields if provided
+      const { email, cpf, gender, birthDate } = req.body;
+
+      // Email validation
+      if (email !== undefined) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          return res.status(400).json({
+            success: false,
+            message: 'E-mail inválido',
+            error: true,
+          });
+        }
+      }
+
+      // CPF validation (basic format)
+      if (cpf !== undefined) {
+        const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/;
+        if (!cpfRegex.test(cpf)) {
+          return res.status(400).json({
+            success: false,
+            message: 'CPF deve estar no formato XXX.XXX.XXX-XX ou apenas números',
+            error: true,
+          });
+        }
+      }
+
+      // Gender validation
+      if (gender !== undefined && !['M', 'F', 'Outro'].includes(gender)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Sexo deve ser M, F ou Outro',
+          error: true,
+        });
+      }
+
+      // Birth date validation
+      if (birthDate !== undefined) {
+        const birthDateObj = new Date(birthDate);
+        if (isNaN(birthDateObj.getTime())) {
+          return res.status(400).json({
+            success: false,
+            message: 'Data de nascimento inválida',
+            error: true,
+          });
+        }
+      }
+
+      const updatedUser = await userService.update(id, req.body);
+      return res.status(200).json({
+        success: true,
+        message: 'Usuário atualizado com sucesso',
+        data: updatedUser,
+      });
+    } catch (err: any) {
+      if (err.message === 'Usuário não encontrado') {
+        return res.status(404).json({
+          success: false,
+          message: err.message,
+          error: true,
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Erro ao atualizar usuário',
         error: true,
       });
     }

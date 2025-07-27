@@ -30,6 +30,7 @@ export const authController = {
       id: user.id,
       username: user.username,
       role: user.role.name,
+      status: user.status,
     });
 
     res.json({ token });

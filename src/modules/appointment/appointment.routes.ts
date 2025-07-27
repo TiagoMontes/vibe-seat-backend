@@ -1,28 +1,44 @@
 import { Router } from 'express';
 import { appointmentController } from './appointment.controller';
-import { authenticateJWT, isAdmin } from '@/middleware/authMiddleware';
+import {
+  authenticateJWT,
+  requireApproved,
+  requireUser,
+  requireAttendant,
+} from '@/middleware/authMiddleware';
 
 const router = Router();
 
-router.use(authenticateJWT);
+// All routes require authentication and approved status
+router.use(authenticateJWT, requireApproved);
 
-// Usuário cria e lista os próprios
-router.post('/', appointmentController.create);
-router.get('/', appointmentController.getAll);
+// Users can create appointments and view available times
+router.post('/', requireUser, appointmentController.create);
+router.post(
+  '/available-times',
+  requireUser,
+  appointmentController.getAvailableTimes
+);
 
-// Buscar agendamentos do usuário logado
-router.get('/my-appointments', appointmentController.getMyAppointments);
+// Users can view their own appointments
+router.get(
+  '/my-appointments',
+  requireUser,
+  appointmentController.getMyAppointments
+);
 
-// Buscar todos os agendamentos (para filtrar no frontend)
-router.get('/allStatus', appointmentController.getScheduledAppointments);
+// Users can cancel their own appointments
+router.patch('/:id/cancel', requireUser, appointmentController.cancel);
 
-// Buscar horários disponíveis (antes das rotas com parâmetros)
-router.post('/available-times', appointmentController.getAvailableTimes);
+// Attendants and admins can view all appointments
+router.get('/', requireAttendant, appointmentController.getAll);
+router.get(
+  '/allStatus',
+  requireAttendant,
+  appointmentController.getScheduledAppointments
+);
 
-// Cancelamento (usuário ou admin)
-router.patch('/:id/cancel', appointmentController.cancel);
-
-// Confirmação de presença (somente admin)
-router.patch('/:id/confirm', isAdmin, appointmentController.confirm);
+// Attendants and admins can confirm presence and manage sessions
+router.patch('/:id/confirm', requireAttendant, appointmentController.confirm);
 
 export const appointmentRoutes = router;

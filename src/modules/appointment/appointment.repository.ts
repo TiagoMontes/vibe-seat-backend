@@ -173,7 +173,7 @@ export const appointmentRepository = {
 
     if (search) {
       const searchTerm = search.trim();
-      
+
       // Search by ID using partial matching for numeric search terms
       if (/^\d+$/.test(searchTerm)) {
         // Get all appointments first, then filter by ID containing the search term
@@ -182,14 +182,14 @@ export const appointmentRepository = {
             ...(status && { status }),
             ...(userId && { userId }),
           },
-          select: { id: true }
+          select: { id: true },
         });
-        
+
         // Filter IDs that contain the search term
         const matchingIds = allAppointments
           .filter(apt => apt.id.toString().includes(searchTerm))
           .map(apt => apt.id);
-        
+
         if (matchingIds.length > 0) {
           where.id = { in: matchingIds };
         } else {
@@ -258,7 +258,7 @@ export const appointmentRepository = {
 
     if (search) {
       const searchTerm = search.trim();
-      
+
       // Search by ID using partial matching for numeric search terms
       if (/^\d+$/.test(searchTerm)) {
         // Get all appointments first, then filter by ID containing the search term
@@ -267,14 +267,14 @@ export const appointmentRepository = {
             ...(status && { status }),
             ...(userId && { userId }),
           },
-          select: { id: true }
+          select: { id: true },
         });
-        
+
         // Filter IDs that contain the search term
         const matchingIds = allAppointments
           .filter(apt => apt.id.toString().includes(searchTerm))
           .map(apt => apt.id);
-        
+
         if (matchingIds.length > 0) {
           where.id = { in: matchingIds };
         } else {
@@ -305,7 +305,7 @@ export const appointmentRepository = {
 
     if (search) {
       const searchTerm = search.trim();
-      
+
       // Search by ID using partial matching for numeric search terms
       if (/^\d+$/.test(searchTerm)) {
         // Get all appointments first, then filter by ID containing the search term
@@ -314,14 +314,14 @@ export const appointmentRepository = {
             ...(status && { status }),
             ...(userId && { userId }),
           },
-          select: { id: true }
+          select: { id: true },
         });
-        
+
         // Filter IDs that contain the search term
         const matchingIds = allAppointments
           .filter(apt => apt.id.toString().includes(searchTerm))
           .map(apt => apt.id);
-        
+
         if (matchingIds.length > 0) {
           whereConditions.push({ id: { in: matchingIds } });
         } else {
