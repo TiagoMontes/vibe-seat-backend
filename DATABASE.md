@@ -401,21 +401,3 @@ mysql -u root -p sejusp-db < backup_file.sql
 2. **Arquivamento**: Agendamentos antigos
 3. **Cache**: Redis para configurações frequentes
 4. **Read Replicas**: Para consultas de relatórios
-
----
-
-## 🔧 Troubleshooting
-
-### **Problemas Comuns**
-1. **Constraint Violations**: Verificar soft delete em relacionamentos
-2. **Migration Failures**: Conflitos de unicidade em dados existentes
-3. **Performance**: Falta de índices em consultas complexas
-4. **Deadlocks**: Operações concorrentes em agendamentos
-
-### **Logs e Debugging**
-```typescript
-// Prisma Debug
-const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'],
-});
-```
