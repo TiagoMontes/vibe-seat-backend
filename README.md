@@ -65,18 +65,8 @@ Este script faz automaticamente:
 Para desenvolvimento local, é recomendado usar o Docker para manter a consistência do ambiente:
 
 ```bash
-# Usar Docker (recomendado)
+# Usar Docker
 bun run start:docker
-
-# Ou rodar apenas o banco localmente e a aplicação fora do container
-docker compose up db -d
-bun install
-bun run prisma:generate
-bun run prisma:migrate
-bun run src/index.ts
-```
-
-**⚠️ Nota**: Se rodar localmente, certifique-se de que o MySQL local está configurado corretamente e use a mesma configuração do Docker.
 
 ---
 
@@ -144,7 +134,7 @@ docker exec -it backend-app-1 bash
 ### Base URL
 
 ```
-http://localhost:3001
+http://localhost(ou seu ip):3001
 ```
 
 ### Principais Módulos da API
