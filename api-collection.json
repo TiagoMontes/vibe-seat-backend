@@ -1,11 +1,16 @@
 {
   "info": {
     "name": "SEJUSP Backend API",
-    "description": "API completa do sistema de agendamentos SEJUSP",
-    "version": "1.0.0",
+    "description": "API completa do sistema de agendamento de cadeiras de massagem SEJUSP",
+    "version": "2.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
+    {
+      "key": "localhost",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
     {
       "key": "token",
       "value": "",
@@ -24,7 +29,7 @@
   },
   "item": [
     {
-      "name": "Auth",
+      "name": "Autenticação",
       "item": [
         {
           "name": "Login",
@@ -44,16 +49,17 @@
               "raw": "{{localhost}}/auth/login",
               "host": ["{{localhost}}"],
               "path": ["auth", "login"]
-            }
+            },
+            "description": "Realiza login e retorna token JWT"
           }
         }
       ]
     },
     {
-      "name": "Users",
+      "name": "Usuários",
       "item": [
         {
-          "name": "Get All Users (with pagination)",
+          "name": "Listar Usuários (com paginação)",
           "request": {
             "method": "GET",
             "header": [],
@@ -75,7 +81,7 @@
                 {
                   "key": "search",
                   "value": "admin",
-                  "description": "Buscar por username"
+                  "description": "Buscar por qualquer campo do usuário"
                 },
                 {
                   "key": "status",
@@ -93,11 +99,12 @@
                   "description": "Ordenação: newest, oldest, username-asc, username-desc"
                 }
               ]
-            }
+            },
+            "description": "Lista usuários com paginação e filtros"
           }
         },
         {
-          "name": "Get All Users (without pagination)",
+          "name": "Listar Usuários (sem paginação)",
           "request": {
             "method": "GET",
             "header": [],
@@ -105,11 +112,12 @@
               "raw": "{{localhost}}/users",
               "host": ["{{localhost}}"],
               "path": ["users"]
-            }
+            },
+            "description": "Lista todos os usuários sem paginação"
           }
         },
         {
-          "name": "Create User",
+          "name": "Criar Usuário (RF02)",
           "request": {
             "method": "POST",
             "header": [
@@ -120,17 +128,21 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"novo_usuario\",\n  \"password\": \"senha123\",\n  \"roleId\": 2\n}"
+              "raw": "{\n  \"username\": \"joao.silva\",\n  \"password\": \"senha123\",\n  \"roleId\": 2,\n  \"fullName\": \"João Silva Santos\",\n  \"cpf\": \"123.456.789-00\",\n  \"jobFunction\": \"Servidor Público\",\n  \"position\": \"Analista\",\n  \"registration\": \"12345\",\n  \"sector\": \"Tecnologia da Informação\",\n  \"email\": \"joao.silva@sejusp.go.gov.br\",\n  \"phone\": \"(62) 99999-9999\",\n  \"gender\": \"M\",\n  \"birthDate\": \"1990-01-01\"\n}"
             },
             "url": {
               "raw": "{{localhost}}/users",
               "host": ["{{localhost}}"],
               "path": ["users"]
+            },
+            "description": "Cria usuário com campos RF02 completos",
+            "auth": {
+              "type": "noauth"
             }
           }
         },
         {
-          "name": "Get User by ID",
+          "name": "Buscar Usuário por ID",
           "request": {
             "method": "GET",
             "header": [],
@@ -138,11 +150,34 @@
               "raw": "{{localhost}}/users/1",
               "host": ["{{localhost}}"],
               "path": ["users", "1"]
-            }
+            },
+            "description": "Busca usuário específico por ID"
           }
         },
         {
-          "name": "Delete User",
+          "name": "Atualizar Usuário",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Novo Nome Completo\",\n  \"email\": \"novo.email@sejusp.go.gov.br\",\n  \"phone\": \"(62) 88888-8888\",\n  \"sector\": \"Novo Setor\"\n}"
+            },
+            "url": {
+              "raw": "{{localhost}}/users/1",
+              "host": ["{{localhost}}"],
+              "path": ["users", "1"]
+            },
+            "description": "Atualiza dados do usuário"
+          }
+        },
+        {
+          "name": "Deletar Usuário",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -150,23 +185,24 @@
               "raw": "{{localhost}}/users/1",
               "host": ["{{localhost}}"],
               "path": ["users", "1"]
-            }
+            },
+            "description": "Deleta usuário (soft delete)"
           }
         }
       ]
     },
     {
-      "name": "Chairs",
+      "name": "Cadeiras",
       "item": [
         {
-          "name": "Get All Chairs (with pagination)",
+          "name": "Listar Cadeiras (com paginação)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{localhost}}/cadeiras?page=1&limit=9&search=sala&status=ACTIVE&sortBy=newest",
+              "raw": "{{localhost}}/chairs?page=1&limit=9&search=sala&status=ACTIVE&sortBy=newest",
               "host": ["{{localhost}}"],
-              "path": ["cadeiras"],
+              "path": ["chairs"],
               "query": [
                 {
                   "key": "page",
@@ -194,23 +230,38 @@
                   "description": "Ordenação: newest, oldest, name-asc, name-desc"
                 }
               ]
-            }
+            },
+            "description": "Lista cadeiras com paginação e filtros"
           }
         },
         {
-          "name": "Get All Chairs (without pagination)",
+          "name": "Listar Cadeiras (sem paginação)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{localhost}}/cadeiras",
+              "raw": "{{localhost}}/chairs",
               "host": ["{{localhost}}"],
-              "path": ["cadeiras"]
-            }
+              "path": ["chairs"]
+            },
+            "description": "Lista todas as cadeiras sem paginação"
           }
         },
         {
-          "name": "Create Chair",
+          "name": "Insights de Cadeiras",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{localhost}}/chairs/insights",
+              "host": ["{{localhost}}"],
+              "path": ["chairs", "insights"]
+            },
+            "description": "Retorna analytics das cadeiras"
+          }
+        },
+        {
+          "name": "Criar Cadeira",
           "request": {
             "method": "POST",
             "header": [
@@ -221,29 +272,31 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Cadeira 1\",\n  \"description\": \"Cadeira na sala principal\",\n  \"location\": \"Sala A\"\n}"
+              "raw": "{\n  \"name\": \"Cadeira Sala A-01\",\n  \"description\": \"Cadeira de massagem na sala principal\",\n  \"location\": \"Sala A - 1º andar\",\n  \"status\": \"ACTIVE\"\n}"
             },
             "url": {
-              "raw": "{{localhost}}/cadeiras",
+              "raw": "{{localhost}}/chairs",
               "host": ["{{localhost}}"],
-              "path": ["cadeiras"]
-            }
+              "path": ["chairs"]
+            },
+            "description": "Cria nova cadeira (admin only)"
           }
         },
         {
-          "name": "Get Chair by ID",
+          "name": "Buscar Cadeira por ID",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{localhost}}/cadeiras/1",
+              "raw": "{{localhost}}/chairs/1",
               "host": ["{{localhost}}"],
-              "path": ["cadeiras", "1"]
-            }
+              "path": ["chairs", "1"]
+            },
+            "description": "Busca cadeira específica por ID"
           }
         },
         {
-          "name": "Update Chair",
+          "name": "Atualizar Cadeira",
           "request": {
             "method": "PATCH",
             "header": [
@@ -254,34 +307,36 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Cadeira 1 Atualizada\",\n  \"status\": \"MAINTENANCE\"\n}"
+              "raw": "{\n  \"name\": \"Cadeira Sala A-01 Atualizada\",\n  \"description\": \"Nova descrição\",\n  \"status\": \"MAINTENANCE\"\n}"
             },
             "url": {
-              "raw": "{{localhost}}/cadeiras/1",
+              "raw": "{{localhost}}/chairs/1",
               "host": ["{{localhost}}"],
-              "path": ["cadeiras", "1"]
-            }
+              "path": ["chairs", "1"]
+            },
+            "description": "Atualiza cadeira (admin only)"
           }
         },
         {
-          "name": "Delete Chair",
+          "name": "Deletar Cadeira",
           "request": {
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{localhost}}/cadeiras/1",
+              "raw": "{{localhost}}/chairs/1",
               "host": ["{{localhost}}"],
-              "path": ["cadeiras", "1"]
-            }
+              "path": ["chairs", "1"]
+            },
+            "description": "Deleta cadeira (soft delete, admin only)"
           }
         }
       ]
     },
     {
-      "name": "Appointments",
+      "name": "Agendamentos",
       "item": [
         {
-          "name": "Get All Appointments (with pagination)",
+          "name": "Listar Agendamentos (com paginação)",
           "request": {
             "method": "GET",
             "header": [],
@@ -316,11 +371,12 @@
                   "description": "Ordenação: newest, oldest, datetime-asc, datetime-desc"
                 }
               ]
-            }
+            },
+            "description": "Lista agendamentos (attendant+)"
           }
         },
         {
-          "name": "Get All Appointments (without pagination)",
+          "name": "Listar Agendamentos (sem paginação)",
           "request": {
             "method": "GET",
             "header": [],
@@ -328,11 +384,12 @@
               "raw": "{{localhost}}/appointments",
               "host": ["{{localhost}}"],
               "path": ["appointments"]
-            }
+            },
+            "description": "Lista todos os agendamentos (attendant+)"
           }
         },
         {
-          "name": "Get My Appointments",
+          "name": "Meus Agendamentos",
           "request": {
             "method": "GET",
             "header": [],
@@ -340,52 +397,25 @@
               "raw": "{{localhost}}/appointments/my-appointments",
               "host": ["{{localhost}}"],
               "path": ["appointments", "my-appointments"]
-            }
+            },
+            "description": "Lista agendamentos do usuário logado"
           }
         },
         {
-          "name": "Get Scheduled Appointments",
+          "name": "Agendamentos (todos status)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{localhost}}/appointments/scheduled",
+              "raw": "{{localhost}}/appointments/allStatus",
               "host": ["{{localhost}}"],
-              "path": ["appointments", "scheduled"]
-            }
+              "path": ["appointments", "allStatus"]
+            },
+            "description": "Lista agendamentos com todos os status (attendant+)"
           }
         },
         {
-          "name": "Get Available Times",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{localhost}}/appointments/available-times?date=2025-01-20&page=1&limit=3",
-              "host": ["{{localhost}}"],
-              "path": ["appointments", "available-times"],
-              "query": [
-                {
-                  "key": "date",
-                  "value": "2025-01-20",
-                  "description": "Data no formato YYYY-MM-DD"
-                },
-                {
-                  "key": "page",
-                  "value": "1",
-                  "description": "Número da página"
-                },
-                {
-                  "key": "limit",
-                  "value": "3",
-                  "description": "Itens por página (máximo 50)"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Create Appointment",
+          "name": "Horários Disponíveis",
           "request": {
             "method": "POST",
             "header": [
@@ -396,17 +426,40 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"chairId\": 1,\n  \"datetimeStart\": \"2025-01-20T08:00:00.000Z\"\n}"
+              "raw": "{\n  \"date\": \"2025-01-27\"\n}"
+            },
+            "url": {
+              "raw": "{{localhost}}/appointments/available-times",
+              "host": ["{{localhost}}"],
+              "path": ["appointments", "available-times"]
+            },
+            "description": "Retorna horários disponíveis para uma data"
+          }
+        },
+        {
+          "name": "Criar Agendamento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chairId\": 1,\n  \"datetimeStart\": \"2025-01-27T08:00:00.000Z\"\n}"
             },
             "url": {
               "raw": "{{localhost}}/appointments",
               "host": ["{{localhost}}"],
               "path": ["appointments"]
-            }
+            },
+            "description": "Cria novo agendamento"
           }
         },
         {
-          "name": "Cancel Appointment",
+          "name": "Cancelar Agendamento",
           "request": {
             "method": "PATCH",
             "header": [],
@@ -414,11 +467,12 @@
               "raw": "{{localhost}}/appointments/1/cancel",
               "host": ["{{localhost}}"],
               "path": ["appointments", "1", "cancel"]
-            }
+            },
+            "description": "Cancela agendamento (próprio usuário ou attendant+)"
           }
         },
         {
-          "name": "Confirm Appointment",
+          "name": "Confirmar Presença",
           "request": {
             "method": "PATCH",
             "header": [],
@@ -426,16 +480,17 @@
               "raw": "{{localhost}}/appointments/1/confirm",
               "host": ["{{localhost}}"],
               "path": ["appointments", "1", "confirm"]
-            }
+            },
+            "description": "Confirma presença na sessão (attendant+)"
           }
         }
       ]
     },
     {
-      "name": "Approvals",
+      "name": "Aprovações",
       "item": [
         {
-          "name": "Get All Approvals (with pagination)",
+          "name": "Listar Aprovações (com paginação)",
           "request": {
             "method": "GET",
             "header": [],
@@ -470,11 +525,12 @@
                   "description": "Ordenação: newest, oldest, user-asc, user-desc"
                 }
               ]
-            }
+            },
+            "description": "Lista aprovações (attendant+)"
           }
         },
         {
-          "name": "Get All Approvals (without pagination)",
+          "name": "Listar Aprovações (sem paginação)",
           "request": {
             "method": "GET",
             "header": [],
@@ -482,11 +538,12 @@
               "raw": "{{localhost}}/approvals",
               "host": ["{{localhost}}"],
               "path": ["approvals"]
-            }
+            },
+            "description": "Lista todas as aprovações (attendant+)"
           }
         },
         {
-          "name": "Get Pending Approvals",
+          "name": "Aprovações Pendentes",
           "request": {
             "method": "GET",
             "header": [],
@@ -494,11 +551,12 @@
               "raw": "{{localhost}}/approvals/pending",
               "host": ["{{localhost}}"],
               "path": ["approvals", "pending"]
-            }
+            },
+            "description": "Lista apenas aprovações pendentes (attendant+)"
           }
         },
         {
-          "name": "Get Approval by ID",
+          "name": "Buscar Aprovação por ID",
           "request": {
             "method": "GET",
             "header": [],
@@ -506,11 +564,12 @@
               "raw": "{{localhost}}/approvals/1",
               "host": ["{{localhost}}"],
               "path": ["approvals", "1"]
-            }
+            },
+            "description": "Busca aprovação específica por ID (attendant+)"
           }
         },
         {
-          "name": "Update Approval Status",
+          "name": "Atualizar Status de Aprovação",
           "request": {
             "method": "PATCH",
             "header": [
@@ -527,16 +586,17 @@
               "raw": "{{localhost}}/approvals/1",
               "host": ["{{localhost}}"],
               "path": ["approvals", "1"]
-            }
+            },
+            "description": "Aprova/rejeita registro de usuário"
           }
         }
       ]
     },
     {
-      "name": "Days of Week",
+      "name": "Dias da Semana",
       "item": [
         {
-          "name": "Get All Days (with pagination)",
+          "name": "Listar Dias (com paginação)",
           "request": {
             "method": "GET",
             "header": [],
@@ -566,11 +626,12 @@
                   "description": "Ordenação: newest, oldest, name-asc, name-desc"
                 }
               ]
-            }
+            },
+            "description": "Lista dias da semana com paginação"
           }
         },
         {
-          "name": "Get All Days (without pagination)",
+          "name": "Listar Dias (sem paginação)",
           "request": {
             "method": "GET",
             "header": [],
@@ -578,11 +639,12 @@
               "raw": "{{localhost}}/days-of-week",
               "host": ["{{localhost}}"],
               "path": ["days-of-week"]
-            }
+            },
+            "description": "Lista todos os dias da semana"
           }
         },
         {
-          "name": "Create Day",
+          "name": "Criar Dia",
           "request": {
             "method": "POST",
             "header": [
@@ -599,11 +661,12 @@
               "raw": "{{localhost}}/days-of-week",
               "host": ["{{localhost}}"],
               "path": ["days-of-week"]
-            }
+            },
+            "description": "Cria novo dia da semana (admin only)"
           }
         },
         {
-          "name": "Get Day by ID",
+          "name": "Buscar Dia por ID",
           "request": {
             "method": "GET",
             "header": [],
@@ -611,11 +674,12 @@
               "raw": "{{localhost}}/days-of-week/1",
               "host": ["{{localhost}}"],
               "path": ["days-of-week", "1"]
-            }
+            },
+            "description": "Busca dia da semana por ID"
           }
         },
         {
-          "name": "Update Day",
+          "name": "Atualizar Dia",
           "request": {
             "method": "PATCH",
             "header": [
@@ -632,11 +696,12 @@
               "raw": "{{localhost}}/days-of-week/1",
               "host": ["{{localhost}}"],
               "path": ["days-of-week", "1"]
-            }
+            },
+            "description": "Atualiza dia da semana (admin only)"
           }
         },
         {
-          "name": "Delete Day",
+          "name": "Deletar Dia",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -644,11 +709,12 @@
               "raw": "{{localhost}}/days-of-week/1",
               "host": ["{{localhost}}"],
               "path": ["days-of-week", "1"]
-            }
+            },
+            "description": "Deleta dia da semana (soft delete, admin only)"
           }
         },
         {
-          "name": "Delete Multiple Days",
+          "name": "Deletar Múltiplos Dias",
           "request": {
             "method": "DELETE",
             "header": [
@@ -665,16 +731,17 @@
               "raw": "{{localhost}}/days-of-week",
               "host": ["{{localhost}}"],
               "path": ["days-of-week"]
-            }
+            },
+            "description": "Deleta múltiplos dias (soft delete, admin only)"
           }
         }
       ]
     },
     {
-      "name": "Schedules",
+      "name": "Configurações de Horário",
       "item": [
         {
-          "name": "Get Schedule Configuration",
+          "name": "Obter Configuração",
           "request": {
             "method": "GET",
             "header": [],
@@ -682,11 +749,12 @@
               "raw": "{{localhost}}/schedules",
               "host": ["{{localhost}}"],
               "path": ["schedules"]
-            }
+            },
+            "description": "Retorna configuração global de horários"
           }
         },
         {
-          "name": "Create Schedule Configuration",
+          "name": "Criar Configuração",
           "request": {
             "method": "POST",
             "header": [
@@ -703,11 +771,12 @@
               "raw": "{{localhost}}/schedules",
               "host": ["{{localhost}}"],
               "path": ["schedules"]
-            }
+            },
+            "description": "Cria configuração de horários (admin only)"
           }
         },
         {
-          "name": "Update Schedule Configuration",
+          "name": "Atualizar Configuração",
           "request": {
             "method": "PATCH",
             "header": [
@@ -724,11 +793,12 @@
               "raw": "{{localhost}}/schedules",
               "host": ["{{localhost}}"],
               "path": ["schedules"]
-            }
+            },
+            "description": "Atualiza configuração de horários (admin only)"
           }
         },
         {
-          "name": "Delete Schedule Configuration",
+          "name": "Deletar Configuração",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -736,7 +806,96 @@
               "raw": "{{localhost}}/schedules",
               "host": ["{{localhost}}"],
               "path": ["schedules"]
-            }
+            },
+            "description": "Remove configuração de horários (soft delete, admin only)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        {
+          "name": "Listar Roles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{localhost}}/roles",
+              "host": ["{{localhost}}"],
+              "path": ["roles"]
+            },
+            "description": "Lista todos os roles (attendant+)"
+          }
+        },
+        {
+          "name": "Criar Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"novo_role\"\n}"
+            },
+            "url": {
+              "raw": "{{localhost}}/roles",
+              "host": ["{{localhost}}"],
+              "path": ["roles"]
+            },
+            "description": "Cria novo role (admin only)"
+          }
+        },
+        {
+          "name": "Buscar Role por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{localhost}}/roles/1",
+              "host": ["{{localhost}}"],
+              "path": ["roles", "1"]
+            },
+            "description": "Busca role por ID (attendant+)"
+          }
+        },
+        {
+          "name": "Atualizar Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"role_atualizado\"\n}"
+            },
+            "url": {
+              "raw": "{{localhost}}/roles/1",
+              "host": ["{{localhost}}"],
+              "path": ["roles", "1"]
+            },
+            "description": "Atualiza role (admin only)"
+          }
+        },
+        {
+          "name": "Deletar Role",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{localhost}}/roles/1",
+              "host": ["{{localhost}}"],
+              "path": ["roles", "1"]
+            },
+            "description": "Deleta role (soft delete, admin only)"
           }
         }
       ]
@@ -745,7 +904,7 @@
       "name": "Dashboard",
       "item": [
         {
-          "name": "Get Dashboard Data",
+          "name": "Obter Dados do Dashboard",
           "request": {
             "method": "GET",
             "header": [],
@@ -753,10 +912,31 @@
               "raw": "{{localhost}}/dashboard",
               "host": ["{{localhost}}"],
               "path": ["dashboard"]
-            }
+            },
+            "description": "Retorna analytics e dados do dashboard"
           }
         }
       ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
     }
   ]
 }

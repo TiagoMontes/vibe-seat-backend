@@ -1,16 +1,18 @@
-# 🧘‍♂️ Vibe Seat Backend
+# 🧘‍♂️ SEJUSP Backend - Sistema de Agendamento
 
-Sistema de agendamento de cadeiras de massagem com controle de acesso por perfis e gerenciamento de sessões, feito com **Bun + Express + Prisma + MySQL + Docker**.
+Sistema de agendamento de cadeiras de massagem com controle de acesso hierárquico e gerenciamento de sessões para a SEJUSP, desenvolvido com **Bun + Express + Prisma + MySQL + Docker**.
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
-- [Bun](https://bun.sh/) - Runtime JavaScript rápido e moderno
-- [Express](https://expressjs.com/) - Framework web para Node.js
-- [Prisma ORM](https://www.prisma.io/) - ORM moderno para TypeScript e Node.js
-- [MySQL](https://www.mysql.com/) - Banco de dados relacional
-- [Docker + Docker Compose](https://docs.docker.com/compose/) - Containerização e orquestração
+- **[Bun](https://bun.sh/)** - Runtime JavaScript rápido e moderno
+- **[Express](https://expressjs.com/)** - Framework web para Node.js/TypeScript
+- **[Prisma ORM](https://www.prisma.io/)** - ORM moderno para TypeScript e Node.js
+- **[MySQL](https://www.mysql.com/)** - Banco de dados relacional
+- **[Docker + Docker Compose](https://docs.docker.com/compose/)** - Containerização e orquestração
+- **[JWT](https://jwt.io/)** - Autenticação por tokens
+- **[bcryptjs](https://www.npmjs.com/package/bcryptjs)** - Criptografia de senhas
 
 ---
 
@@ -26,8 +28,8 @@ Sistema de agendamento de cadeiras de massagem com controle de acesso por perfis
 ### 1. Clone o projeto
 
 ```bash
-git clone https://github.com/TiagoMontes/vibe-seat-backend.git
-cd vibe-seat-backend
+git clone <URL_DO_REPOSITORIO>
+cd backend
 ```
 
 ### 2. Configuração do Banco de Dados
@@ -35,7 +37,7 @@ cd vibe-seat-backend
 O projeto está configurado para usar apenas o banco de dados do Docker. A variável `DATABASE_URL` é automaticamente definida no `docker-compose.yml`:
 
 ```env
-DATABASE_URL=mysql://root:root@db:3306/vibe-seat-db?connection_limit=50
+DATABASE_URL=mysql://root:root@db:3306/sejusp-db?connection_limit=50
 ```
 
 **⚠️ Importante**: Não crie um arquivo `.env` local, pois isso pode causar conflitos com o banco do Docker.
@@ -100,8 +102,17 @@ bun run prisma:migrate
 # Executar seed do admin
 bun run seed:admin
 
-# Resetar banco de dados (limpa tudo e recria)
-bun run db:reset
+# Executar seed dos dias da semana
+bun run seed:days-of-week
+
+# Formatação de código
+bun run format
+
+# Verificar formatação
+bun run format:check
+
+# Testes de performance
+bun run test:performance
 
 # Abrir Prisma Studio (interface visual do banco)
 bun run prisma:studio
@@ -136,10 +147,45 @@ docker exec -it backend-app-1 bash
 http://localhost:3001
 ```
 
-### Endpoints Disponíveis
+### Principais Módulos da API
 
-- `GET /` - Status da API
-- _Outros endpoints serão implementados conforme o desenvolvimento_
+- **Autenticação** (`/auth`) - Login e gerenciamento de tokens JWT
+- **Usuários** (`/users`) - Gestão de usuários com campos RF02 completos
+- **Aprovações** (`/approvals`) - Workflow de aprovação hierárquica
+- **Cadeiras** (`/chairs`) - Gerenciamento de cadeiras de massagem
+- **Agendamentos** (`/appointments`) - Sistema de booking com regras de negócio
+- **Configurações** (`/schedules`) - Configuração global de horários
+- **Dias da Semana** (`/days-of-week`) - Gestão de dias disponíveis
+- **Roles** (`/roles`) - Controle de perfis e permissões
+- **Dashboard** (`/dashboard`) - Analytics e visão geral do sistema
+
+### Arquitetura do Sistema
+
+#### Hierarquia de Permissões
+
+**user < attendant < admin**
+
+- **Usuário (user)**: Criar e cancelar próprios agendamentos, visualizar horários disponíveis
+- **Atendente (attendant)**: Todas as permissões de usuário + aprovar registros de usuários + confirmar presença
+- **Administrador (admin)**: Todas as permissões + gerenciar cadeiras + configurar horários + aprovar atendentes
+
+#### Modelos Principais
+
+- **User**: Usuários com campos RF02 completos (CPF, matrícula, setor, etc.)
+- **Role**: Perfis de acesso (admin, attendant, user)
+- **UserApproval**: Workflow de aprovação com status pending/approved/rejected
+- **Chair**: Cadeiras com status ACTIVE/MAINTENANCE/INACTIVE
+- **ScheduleConfig**: Configuração global singleton com horários JSON
+- **DayOfWeek**: Dias da semana disponíveis para agendamento
+- **Appointment**: Agendamentos com status SCHEDULED/CANCELLED/CONFIRMED
+
+#### Regras de Negócio
+
+- **Agendamentos**: Máximo 1 agendamento ativo por usuário
+- **Cancelamento**: Mínimo 3h de antecedência (exceto admins)
+- **Duração**: 30 minutos por sessão
+- **Aprovação**: Todos os usuários precisam ser aprovados antes do acesso
+- **Soft Delete**: Todos os modelos implementam deleção suave
 
 ---
 
@@ -158,19 +204,47 @@ http://localhost:3001
 
 ## 📝 Desenvolvimento
 
+### Estrutura Modular
+
+O projeto segue uma arquitetura modular em `src/modules/`:
+
+```
+src/modules/
+├── auth/           # Autenticação JWT
+├── user/           # Gestão de usuários
+├── role/           # Controle de perfis
+├── approval/       # Workflow de aprovação
+├── chair/          # Gerenciamento de cadeiras
+├── schedule/       # Configuração de horários
+├── dayOfWeek/      # Dias da semana
+├── appointment/    # Sistema de agendamentos
+└── dashboard/      # Analytics e métricas
+```
+
+Cada módulo contém:
+- `*.controller.ts` - Controladores de requisições
+- `*.service.ts` - Lógica de negócio
+
+### Login para utilizar na primeira vez
+- para logar pela primeira vez, após utilizar o comando bun run start:docker, você pode utilizar as seguintes credenciais
+- "username": "admin"
+- "password": "admin123"
+
 ### Adicionando Novas Funcionalidades
 
-1. Atualize o schema do Prisma em `prisma/schema.prisma`
-2. Gere uma nova migration: `bunx prisma migrate dev --name nome-da-migration`
-3. Implemente os endpoints em `src/index.ts`
-4. Teste localmente ou com Docker
+1. **Altere o Schema**: Atualize `prisma/schema.prisma`
+2. **Crie Migration**: `bunx prisma migrate dev --name nome-da-migration`
+3. **Implemente Módulo**: Siga o padrão controller → service → repository
+4. **Configure Rotas**: Adicione em `src/index.ts`
+5. **Teste**: Use Docker ou ambiente local
 
 ### Boas Práticas
 
-- Sempre gere migrations após alterar o schema
-- Use TypeScript para type safety
-- Mantenha o Docker Compose atualizado
-- Documente novos endpoints
+- **Migrations**: Sempre gere após alterar schema
+- **TypeScript**: Use tipagem forte em toda aplicação
+- **Autenticação**: Todas as rotas protegidas usam middleware JWT
+- **Validação**: Implemente validações nos controllers
+- **Soft Delete**: Use deleção suave em todos os modelos
 
 ---
 

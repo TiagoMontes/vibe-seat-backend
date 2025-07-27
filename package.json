@@ -9,9 +9,10 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "seed:admin": "bun run src/scripts/seed-admin.ts",
+    "seed:days-of-week": "bun run src/scripts/seed-days-of-week.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:performance": "artillery run tests/performance/artillery.yml",
+    "test:performance": "artillery run tests/performance/artillery-simple.yml",
     "prisma:migrate:docker": "docker-compose run --rm app bun run prisma:migrate",
     "prisma:studio:docker": "docker-compose run --rm app bun run prisma:studio",
     "prisma:generate:docker": "docker-compose run --rm app bun run prisma:generate"
@@ -20,6 +21,7 @@
     "@types/bun": "latest",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
+    "faker": "5.5.3",
     "prettier": "^3.6.2",
     "prisma": "^6.12.0",
     "zx": "^8.7.1"

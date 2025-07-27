@@ -17,8 +17,9 @@ await $`docker exec backend-app-2 bunx prisma generate`;
 await $`docker exec backend-app-3 bunx prisma generate`;
 await $`docker exec backend-app-4 bunx prisma generate`;
 
-console.log('🌱 Executando seed do admin...');
+console.log('🌱 Executando seeds...');
 await $`docker exec backend-app-1 bun run seed:admin`;
+await $`docker exec backend-app-1 bun run seed:days-of-week`;
 
 console.log('🔗 Entrando no container principal...');
 await $`docker exec -it backend-app-1 bash`;

@@ -15,9 +15,9 @@ export const userService = {
     const [existingUsername, existingCpf, existingEmail, existingRegistration] =
       await Promise.all([
         userRepository.findByUsername(input.username),
-        prisma.user.findUnique({ where: { cpf: input.cpf } }),
-        prisma.user.findUnique({ where: { email: input.email } }),
-        prisma.user.findUnique({ where: { registration: input.registration } }),
+        prisma.user.findFirst({ where: { cpf: input.cpf } }),
+        prisma.user.findFirst({ where: { email: input.email } }),
+        prisma.user.findFirst({ where: { registration: input.registration } }),
       ]);
 
     if (existingUsername) throw new Error('Username já está em uso');
@@ -123,13 +123,47 @@ export const userService = {
       throw new Error('Usuário não encontrado');
     }
 
+    // Validate input fields if provided
+    const { email, cpf, gender, birthDate } = input;
+
+    // Email validation
+    if (email !== undefined) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new Error('E-mail inválido');
+      }
+    }
+
+    // CPF validation (basic format)
+    if (cpf !== undefined) {
+      const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/;
+      if (!cpfRegex.test(cpf)) {
+        throw new Error('CPF deve estar no formato XXX.XXX.XXX-XX ou apenas números');
+      }
+    }
+
+    // Gender validation
+    if (gender !== undefined && !['M', 'F', 'Outro'].includes(gender)) {
+      throw new Error('Sexo deve ser M, F ou Outro');
+    }
+
+    // Birth date validation
+    if (birthDate !== undefined) {
+      const birthDateObj = new Date(birthDate);
+      if (isNaN(birthDateObj.getTime())) {
+        throw new Error('Data de nascimento inválida');
+      }
+    }
+
     // Prepare update data
     const updateData: any = {};
 
     // Handle each field that might be updated
     if (input.username !== undefined) {
       // Check if username is already taken by another user
-      const existingUsername = await userRepository.findByUsername(input.username);
+      const existingUsername = await userRepository.findByUsername(
+        input.username
+      );
       if (existingUsername && existingUsername.id !== id) {
         throw new Error('Username já está em uso');
       }
@@ -150,7 +184,9 @@ export const userService = {
 
     if (input.cpf !== undefined) {
       // Check if CPF is already taken by another user
-      const existingCpf = await prisma.user.findUnique({ where: { cpf: input.cpf } });
+      const existingCpf = await prisma.user.findFirst({
+        where: { cpf: input.cpf },
+      });
       if (existingCpf && existingCpf.id !== id) {
         throw new Error('CPF já está cadastrado');
       }
@@ -167,7 +203,9 @@ export const userService = {
 
     if (input.registration !== undefined) {
       // Check if registration is already taken by another user
-      const existingRegistration = await prisma.user.findUnique({ where: { registration: input.registration } });
+      const existingRegistration = await prisma.user.findFirst({
+        where: { registration: input.registration },
+      });
       if (existingRegistration && existingRegistration.id !== id) {
         throw new Error('Matrícula já está cadastrada');
       }
@@ -180,7 +218,9 @@ export const userService = {
 
     if (input.email !== undefined) {
       // Check if email is already taken by another user
-      const existingEmail = await prisma.user.findUnique({ where: { email: input.email } });
+      const existingEmail = await prisma.user.findFirst({
+        where: { email: input.email },
+      });
       if (existingEmail && existingEmail.id !== id) {
         throw new Error('E-mail já está cadastrado');
       }

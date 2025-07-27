@@ -56,18 +56,7 @@ export const scheduleController = {
   ) => {
     try {
       const { id } = req.params;
-
-      // Valida se o ID é 1 (singleton)
-      if (id !== '1') {
-        return res.status(400).json({
-          success: false,
-          message:
-            'ID inválido. A configuração de agenda é um singleton com ID = 1.',
-          error: true,
-        });
-      }
-
-      const updated = await scheduleService.update(req.body);
+      const updated = await scheduleService.update(req.body, id);
       return res.status(200).json({
         success: true,
         message: 'Configuração de agenda atualizada com sucesso',
@@ -92,18 +81,7 @@ export const scheduleController = {
   delete: async (req: Request<{ id: string }>, res: Response) => {
     try {
       const { id } = req.params;
-
-      // Valida se o ID é 1 (singleton)
-      if (id !== '1') {
-        return res.status(400).json({
-          success: false,
-          message:
-            'ID inválido. A configuração de agenda é um singleton com ID = 1.',
-          error: true,
-        });
-      }
-
-      await scheduleService.remove();
+      await scheduleService.remove(id);
       return res.status(200).json({
         success: true,
         message: 'Configuração de agenda removida com sucesso',
@@ -133,25 +111,7 @@ export const scheduleController = {
       const { id } = req.params;
       const { dayIds } = req.body;
 
-      // Valida se o ID é 1 (singleton)
-      if (id !== '1') {
-        return res.status(400).json({
-          success: false,
-          message:
-            'ID inválido. A configuração de agenda é um singleton com ID = 1.',
-          error: true,
-        });
-      }
-
-      if (!dayIds || !Array.isArray(dayIds)) {
-        return res.status(400).json({
-          success: false,
-          message: 'dayIds deve ser um array de números',
-          error: true,
-        });
-      }
-
-      const updated = await scheduleService.updateDays(dayIds);
+      const updated = await scheduleService.updateDays(dayIds, id);
       return res.status(200).json({
         success: true,
         message: 'Dias da semana atualizados com sucesso',

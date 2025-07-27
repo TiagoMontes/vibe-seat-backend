@@ -1,0 +1,85 @@
+config:
+  target: 'http://localhost:3001'
+  phases:
+    # Teste mais leve para começar
+    - duration: 30
+      arrivalRate: 10
+    - duration: 60
+      arrivalRate: 20
+    - duration: 30
+      arrivalRate: 10
+  processor: './performance-helpers.js'
+
+scenarios:
+  # Cenário básico: Login admin e operações
+  - name: admin-basic
+    weight: 30
+    flow:
+      - post:
+          url: '/auth/login'
+          json:
+            username: 'admin'
+            password: 'admin123'
+          capture:
+            - json: $.token
+              as: adminToken
+
+      - think: 1
+
+      - get:
+          url: '/chairs'
+          headers:
+            Authorization: 'Bearer {{ adminToken }}'
+
+      - get:
+          url: '/dashboard'
+          headers:
+            Authorization: 'Bearer {{ adminToken }}'
+
+  # Cenário: Criar usuário e tentar login
+  - name: user-registration-flow
+    weight: 50
+    flow:
+      - post:
+          url: '/users'
+          beforeRequest: 'generateUserData'
+          json:
+            username: '{{ username }}'
+            password: '{{ password }}'
+            roleId: 1
+            fullName: '{{ fullName }}'
+            cpf: '{{ cpf }}'
+            jobFunction: '{{ jobFunction }}'
+            position: '{{ position }}'
+            registration: '{{ registration }}'
+            sector: '{{ sector }}'
+            email: '{{ email }}'
+            phone: '{{ phone }}'
+            gender: '{{ gender }}'
+            birthDate: '{{ birthDate }}'
+
+      - think: 2
+
+      # Tentar login (provavelmente falhará por não estar aprovado)
+      - post:
+          url: '/auth/login'
+          json:
+            username: '{{ username }}'
+            password: '{{ password }}'
+
+  # Cenário: Stress test básico
+  - name: error-testing
+    weight: 20
+    flow:
+      - post:
+          url: '/auth/login'
+          json:
+            username: 'invalid'
+            password: 'invalid'
+          expect:
+            - statusCode: 401
+
+      - get:
+          url: '/appointments'
+          expect:
+            - statusCode: 401

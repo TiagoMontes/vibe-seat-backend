@@ -92,7 +92,7 @@ export const dashboardService = {
         },
       }),
 
-      // Agendamentos recentes (últimos 10)
+      // Agendamentos recentes (últimos 6)
       prisma.appointment.findMany({
         include: {
           user: {
@@ -112,7 +112,7 @@ export const dashboardService = {
         orderBy: {
           createdAt: 'desc',
         },
-        take: 10,
+        take: 6,
       }),
     ]);
 

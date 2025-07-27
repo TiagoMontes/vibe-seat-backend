@@ -5,12 +5,78 @@ import type {
   AppointmentFilters,
   AppointmentWithPagination,
   PaginationMeta,
+  AppointmentQueryParams,
 } from './types';
 
 const APPOINTMENT_DURATION_MINUTES = 30;
 const CANCELLATION_NOTICE_HOURS = 3;
 
+const validateAndParseQueryParams = (
+  query: AppointmentQueryParams
+): AppointmentFilters => {
+  // Parse and validate page
+  let page = parseInt(query.page || '1', 10);
+  if (isNaN(page) || page < 1) {
+    page = 1;
+  }
+
+  // Parse and validate limit
+  let limit = parseInt(query.limit || '9', 10);
+  if (isNaN(limit) || limit < 1 || limit > 50) {
+    limit = 9;
+  }
+
+  // Validate status
+  const validStatuses = ['SCHEDULED', 'CANCELLED', 'CONFIRMED'];
+  const status =
+    query.status && validStatuses.includes(query.status)
+      ? query.status
+      : undefined;
+
+  // Validate sortBy
+  const validSortOptions = [
+    'newest',
+    'oldest',
+    'datetime-asc',
+    'datetime-desc',
+  ];
+  const sortBy =
+    query.sortBy && validSortOptions.includes(query.sortBy)
+      ? query.sortBy
+      : 'newest';
+
+  // Sanitize search
+  const search = query.search ? query.search.trim() : undefined;
+
+  // Parse userId if provided
+  let userId: number | undefined;
+  if (query.userId) {
+    userId = parseInt(query.userId, 10);
+    if (isNaN(userId)) {
+      userId = undefined;
+    }
+  }
+
+  return {
+    page,
+    limit,
+    search,
+    status,
+    sortBy,
+    userId,
+  };
+};
+
 export const appointmentService = {
+  // Métodos para processar query params
+  processQueryParams: (query: AppointmentQueryParams) => {
+    return validateAndParseQueryParams(query);
+  },
+
+  hasQueryParams: (query: AppointmentQueryParams) => {
+    return Object.keys(query).length > 0;
+  },
+
   // 1) Criar novo agendamento
   create: async (userId: number, input: AppointmentInput) => {
     const start = new Date(input.datetimeStart);

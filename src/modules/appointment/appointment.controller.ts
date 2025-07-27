@@ -3,64 +3,7 @@ import { appointmentService } from './appointment.service';
 import type {
   AppointmentInput,
   AppointmentQueryParams,
-  AppointmentFilters,
 } from './types';
-
-const validateAndParseQueryParams = (
-  query: AppointmentQueryParams
-): AppointmentFilters => {
-  // Parse and validate page
-  let page = parseInt(query.page || '1', 10);
-  if (isNaN(page) || page < 1) {
-    page = 1;
-  }
-
-  // Parse and validate limit
-  let limit = parseInt(query.limit || '9', 10);
-  if (isNaN(limit) || limit < 1 || limit > 50) {
-    limit = 9;
-  }
-
-  // Validate status
-  const validStatuses = ['SCHEDULED', 'CANCELLED', 'CONFIRMED'];
-  const status =
-    query.status && validStatuses.includes(query.status)
-      ? query.status
-      : undefined;
-
-  // Validate sortBy
-  const validSortOptions = [
-    'newest',
-    'oldest',
-    'datetime-asc',
-    'datetime-desc',
-  ];
-  const sortBy =
-    query.sortBy && validSortOptions.includes(query.sortBy)
-      ? query.sortBy
-      : 'newest';
-
-  // Sanitize search
-  const search = query.search ? query.search.trim() : undefined;
-
-  // Parse userId if provided
-  let userId: number | undefined;
-  if (query.userId) {
-    userId = parseInt(query.userId, 10);
-    if (isNaN(userId)) {
-      userId = undefined;
-    }
-  }
-
-  return {
-    page,
-    limit,
-    search,
-    status,
-    sortBy,
-    userId,
-  };
-};
 
 export const appointmentController = {
   // POST /agendamentos
@@ -91,11 +34,11 @@ export const appointmentController = {
       const user = (req as any).user;
 
       // Check if any pagination/filter parameters are provided
-      const hasQueryParams = Object.keys(req.query).length > 0;
+      const hasQueryParams = appointmentService.hasQueryParams(req.query);
 
       if (hasQueryParams) {
         // Use pagination when query parameters are present
-        const filters = validateAndParseQueryParams(req.query);
+        const filters = appointmentService.processQueryParams(req.query);
         const result = await appointmentService.getAllWithPagination(
           filters,
           user.id,
@@ -108,12 +51,12 @@ export const appointmentController = {
         });
       } else {
         // Maintain backward compatibility - return all appointments without pagination
-        const list = await appointmentService.getAll(user.id, user.role);
+        const result = await appointmentService.getAll(user.id, user.role);
         return res.status(200).json({
           success: true,
           message: 'Agendamentos listados com sucesso',
-          data: list,
-          total: list.length,
+          data: result,
+          total: result.length,
         });
       }
     } catch (err: any) {
@@ -138,7 +81,7 @@ export const appointmentController = {
 
       if (hasQueryParams) {
         // Use pagination when query parameters are present
-        const filters = validateAndParseQueryParams(req.query);
+        const filters = appointmentService.processQueryParams(req.query);
         const result = await appointmentService.getMyAppointmentsWithPagination(
           user.id,
           filters

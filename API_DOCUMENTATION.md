@@ -1,22 +1,46 @@
-# SEJUSP Backend API Documentation
+# SEJUSP Backend - Documentação da API
 
 ## Visão Geral
 
-Esta API gerencia o sistema de agendamentos do SEJUSP, incluindo usuários, cadeiras, agendamentos, aprovações e configurações de horários.
+Esta API gerencia o sistema de agendamento de cadeiras de massagem do SEJUSP com controle de acesso hierárquico, incluindo usuários, cadeiras, agendamentos, aprovações e configurações de horários.
 
 ## Base URL
 
 ```
-http://localhost:3000
+http://localhost:3001
 ```
 
 ## Autenticação
 
 A API usa autenticação JWT Bearer Token. Após fazer login, use o token retornado no header `Authorization: Bearer <token>`.
 
+## Hierarquia de Permissões
+
+**user < attendant < admin**
+
+### Usuário (user)
+- Criar e cancelar próprios agendamentos (máx 1 ativo)
+- Visualizar horários disponíveis
+- Visualizar cadeiras e configurações
+- Atualizar próprios dados
+
+### Atendente (attendant)
+- Todas as permissões de usuário
+- Aprovar/rejeitar registros de usuários
+- Visualizar e gerenciar todos os agendamentos
+- Confirmar presença nas sessões
+- Visualizar dashboard e analytics
+
+### Administrador (admin)
+- Todas as permissões de atendente
+- Aprovar registros de atendentes
+- Gerenciar cadeiras (criar, editar, deletar)
+- Configurar horários e dias disponíveis
+- Gerenciar roles e configurações do sistema
+
 ## Soft Delete Automático
 
-Todos os endpoints de DELETE agora fazem **soft delete** automaticamente:
+Todos os endpoints de DELETE fazem **soft delete** automaticamente:
 
 - Registros não são removidos do banco
 - Campo `deletedAt` é preenchido com a data/hora atual
@@ -24,24 +48,11 @@ Todos os endpoints de DELETE agora fazem **soft delete** automaticamente:
 
 ### Campos de Timestamp
 
-Todos os models agora incluem automaticamente:
+Todos os models incluem automaticamente:
 
 - `createdAt` - Data/hora de criação (preenchido automaticamente)
 - `updatedAt` - Data/hora da última atualização (atualizado automaticamente)
 - `deletedAt` - Data/hora de exclusão (null se não deletado)
-
-### Exemplo de Response com Timestamps:
-
-```json
-{
-  "id": 1,
-  "name": "monday",
-  "scheduleConfigId": 1,
-  "createdAt": "2025-01-20T10:00:00.000Z",
-  "updatedAt": "2025-01-20T15:30:00.000Z",
-  "deletedAt": null
-}
-```
 
 ---
 
@@ -51,7 +62,9 @@ Todos os models agora incluem automaticamente:
 
 #### POST /auth/login
 
-Faz login do usuário e retorna um token JWT.
+Realiza login do usuário e retorna token JWT.
+
+**Autenticação:** Não requerida
 
 **Body:**
 
@@ -62,7 +75,7 @@ Faz login do usuário e retorna um token JWT.
 }
 ```
 
-**Response:**
+**Response (Sucesso - 200):**
 
 ```json
 {
@@ -70,8 +83,23 @@ Faz login do usuário e retorna um token JWT.
   "user": {
     "id": 1,
     "username": "admin",
-    "role": "admin"
+    "fullName": "Administrador do Sistema",
+    "status": "approved",
+    "role": {
+      "id": 1,
+      "name": "admin"
+    }
   }
+}
+```
+
+**Response (Erro - 401):**
+
+```json
+{
+  "success": false,
+  "message": "Credenciais inválidas",
+  "error": true
 }
 ```
 
@@ -83,11 +111,14 @@ Faz login do usuário e retorna um token JWT.
 
 Lista todos os usuários com paginação opcional.
 
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Atendente ou superior
+
 **Query Parameters (opcionais):**
 
 - `page` - Número da página (padrão: 1)
 - `limit` - Itens por página (padrão: 9, máximo: 50)
-- `search` - Buscar por username
+- `search` - Buscar por qualquer campo do usuário (username, nome, CPF, email, etc.)
 - `status` - Filtrar por status: `pending`, `approved`, `rejected`
 - `roleId` - Filtrar por role específico
 - `sortBy` - Ordenação: `newest`, `oldest`, `username-asc`, `username-desc`
@@ -108,6 +139,8 @@ GET /users?page=1&limit=9&search=admin&status=approved&sortBy=newest
       "username": "admin",
       "status": "approved",
       "roleId": 1,
+      "fullName": "Administrador do Sistema",
+      "email": "admin@sejusp.go.gov.br",
       "createdAt": "2025-01-20T10:00:00.000Z",
       "updatedAt": "2025-01-20T10:00:00.000Z",
       "role": {
@@ -138,15 +171,43 @@ GET /users?page=1&limit=9&search=admin&status=approved&sortBy=newest
 
 #### POST /users
 
-Cria um novo usuário.
+Cria um novo usuário com campos RF02 completos.
 
-**Body:**
+**Autenticação:** Não requerida (rota pública para registro)
+
+**Body (Campos obrigatórios):**
 
 ```json
 {
-  "username": "novo_usuario",
+  "username": "joao.silva",
   "password": "senha123",
-  "roleId": 2
+  "roleId": 2,
+  "fullName": "João Silva Santos",
+  "cpf": "123.456.789-00",
+  "jobFunction": "Servidor Público",
+  "position": "Analista",
+  "registration": "12345",
+  "sector": "Tecnologia da Informação",
+  "email": "joao.silva@sejusp.go.gov.br",
+  "phone": "(62) 99999-9999",
+  "gender": "M",
+  "birthDate": "1990-01-01"
+}
+```
+
+**Response (Sucesso - 201):**
+
+```json
+{
+  "success": true,
+  "message": "Usuário criado com sucesso. Aguarde aprovação.",
+  "data": {
+    "id": 15,
+    "username": "joao.silva",
+    "status": "pending",
+    "fullName": "João Silva Santos",
+    "createdAt": "2025-01-27T10:00:00.000Z"
+  }
 }
 ```
 
@@ -154,9 +215,35 @@ Cria um novo usuário.
 
 Busca usuário por ID.
 
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Atendente ou superior
+
+#### PATCH /users/:id
+
+Atualiza dados do usuário.
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Próprio usuário ou administrador
+
+**Body (Todos os campos opcionais):**
+
+```json
+{
+  "username": "novo_username",
+  "password": "nova_senha",
+  "fullName": "Novo Nome Completo",
+  "email": "novo.email@sejusp.go.gov.br",
+  "phone": "(62) 88888-8888",
+  "sector": "Novo Setor"
+}
+```
+
 #### DELETE /users/:id
 
-Deleta um usuário.
+Deleta um usuário (soft delete).
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Apenas administradores
 
 ---
 
@@ -165,6 +252,9 @@ Deleta um usuário.
 #### GET /chairs
 
 Lista todas as cadeiras com paginação opcional.
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Qualquer usuário aprovado
 
 **Query Parameters (opcionais):**
 
@@ -180,17 +270,28 @@ Lista todas as cadeiras com paginação opcional.
 GET /chairs?page=1&limit=9&search=sala&status=ACTIVE&sortBy=newest
 ```
 
+#### GET /chairs/insights
+
+Retorna analytics e insights das cadeiras.
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Atendente ou superior
+
 #### POST /chairs
 
 Cria uma nova cadeira.
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Apenas administradores
 
 **Body:**
 
 ```json
 {
-  "name": "Cadeira 1",
-  "description": "Cadeira na sala principal",
-  "location": "Sala A"
+  "name": "Cadeira Sala A-01",
+  "description": "Cadeira de massagem na sala principal",
+  "location": "Sala A - 1º andar",
+  "status": "ACTIVE"
 }
 ```
 
@@ -198,22 +299,33 @@ Cria uma nova cadeira.
 
 Busca cadeira por ID.
 
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Qualquer usuário aprovado
+
 #### PATCH /chairs/:id
 
 Atualiza uma cadeira.
 
-**Body:**
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Apenas administradores
+
+**Body (Campos opcionais):**
 
 ```json
 {
-  "name": "Cadeira 1 Atualizada",
+  "name": "Cadeira Sala A-01 Atualizada",
+  "description": "Nova descrição",
+  "location": "Nova localização",
   "status": "MAINTENANCE"
 }
 ```
 
 #### DELETE /chairs/:id
 
-Deleta uma cadeira.
+Deleta uma cadeira (soft delete).
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Apenas administradores
 
 ---
 
@@ -222,6 +334,9 @@ Deleta uma cadeira.
 #### GET /appointments
 
 Lista todos os agendamentos com paginação opcional.
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Atendente ou superior
 
 **Query Parameters (opcionais):**
 
@@ -241,6 +356,9 @@ GET /appointments?page=1&limit=9&search=admin&status=SCHEDULED&sortBy=newest
 
 Lista agendamentos do usuário logado com estatísticas.
 
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Qualquer usuário aprovado
+
 **Response:**
 
 ```json
@@ -256,24 +374,26 @@ Lista agendamentos do usuário logado com estatísticas.
 }
 ```
 
-#### GET /appointments/scheduled
+#### GET /appointments/allStatus
 
-Lista agendamentos agendados (apenas para admin).
+Lista agendamentos com todos os status.
 
-#### GET /appointments/available-times
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Atendente ou superior
 
-Lista horários disponíveis para uma data específica.
+#### POST /appointments/available-times
 
-**Query Parameters:**
+Retorna horários disponíveis para uma data específica.
 
-- `date` - Data no formato YYYY-MM-DD (obrigatório)
-- `page` - Número da página (opcional)
-- `limit` - Itens por página (opcional)
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Qualquer usuário aprovado
 
-**Exemplo:**
+**Body:**
 
-```
-GET /appointments/available-times?date=2025-01-20&page=1&limit=3
+```json
+{
+  "date": "2025-01-27"
+}
 ```
 
 **Response:**
@@ -285,24 +405,13 @@ GET /appointments/available-times?date=2025-01-20&page=1&limit=3
       "chairId": 1,
       "chairName": "Cadeira 1",
       "chairLocation": "Sala A",
-      "available": ["2025-01-20T08:00:00.000Z", "2025-01-20T08:30:00.000Z"],
-      "unavailable": ["2025-01-20T09:00:00.000Z"],
+      "available": ["2025-01-27T08:00:00.000Z", "2025-01-27T08:30:00.000Z"],
+      "unavailable": ["2025-01-27T09:00:00.000Z"],
       "totalSlots": 16,
       "bookedSlots": 1,
       "availableSlots": 15
     }
   ],
-  "pagination": {
-    "currentPage": 1,
-    "totalPages": 3,
-    "totalItems": 25,
-    "itemsPerPage": 3,
-    "hasNextPage": true,
-    "hasPrevPage": false,
-    "nextPage": 2,
-    "prevPage": null,
-    "lastPage": 3
-  },
   "totalSlots": 16,
   "bookedSlots": 5,
   "availableSlots": 75
@@ -313,12 +422,38 @@ GET /appointments/available-times?date=2025-01-20&page=1&limit=3
 
 Cria um novo agendamento.
 
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Qualquer usuário aprovado
+
+**Regras de Negócio:**
+- Máximo 1 agendamento ativo por usuário
+- Horário deve estar dentro da configuração de funcionamento
+- Cadeira deve estar disponível no horário
+
 **Body:**
 
 ```json
 {
   "chairId": 1,
-  "datetimeStart": "2025-01-20T08:00:00.000Z"
+  "datetimeStart": "2025-01-27T08:00:00.000Z"
+}
+```
+
+**Response (Sucesso - 201):**
+
+```json
+{
+  "success": true,
+  "message": "Agendamento criado com sucesso",
+  "data": {
+    "id": 25,
+    "userId": 5,
+    "chairId": 1,
+    "datetimeStart": "2025-01-27T08:00:00.000Z",
+    "datetimeEnd": "2025-01-27T08:30:00.000Z",
+    "status": "SCHEDULED",
+    "createdAt": "2025-01-27T10:00:00.000Z"
+  }
 }
 ```
 
@@ -326,9 +461,19 @@ Cria um novo agendamento.
 
 Cancela um agendamento.
 
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Próprio usuário ou atendente/admin
+
+**Regras de Negócio:**
+- Cancelamento com mínimo 3h de antecedência (exceto admins)
+- Apenas agendamentos com status SCHEDULED podem ser cancelados
+
 #### PATCH /appointments/:id/confirm
 
-Confirma um agendamento (apenas para admin).
+Confirma presença do usuário na sessão.
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Atendente ou superior
 
 ---
 
@@ -337,6 +482,9 @@ Confirma um agendamento (apenas para admin).
 #### GET /approvals
 
 Lista todas as aprovações com paginação opcional.
+
+**Autenticação:** Requerida (JWT)
+**Autorização:** Atendente ou superior
 
 **Query Parameters (opcionais):**
 
@@ -356,13 +504,27 @@ GET /approvals?page=1&limit=9&search=admin&status=pending&sortBy=newest
 
 Lista apenas aprovações pendentes (sem paginação).
 
+**Autenticação:** Requerida (JWT)
+**Autorização:** Atendente ou superior
+
 #### GET /approvals/:id
 
 Busca aprovação por ID.
 
+**Autenticação:** Requerida (JWT)
+**Autorização:** Atendente ou superior
+
 #### PATCH /approvals/:id
 
 Atualiza status da aprovação.
+
+**Autenticação:** Requerida (JWT)
+**Autorização:** Atendente (para usuários) ou Admin (para atendentes)
+
+**Regras de Negócio:**
+- Atendentes podem aprovar registros de usuários
+- Administradores podem aprovar registros de atendentes
+- Administradores podem aprovar qualquer registro
 
 **Body:**
 
@@ -387,45 +549,12 @@ Lista todos os dias da semana com paginação opcional.
 - `search` - Buscar por nome do dia
 - `sortBy` - Ordenação: `newest`, `oldest`, `name-asc`, `name-desc`
 
-**Exemplo:**
-
-```
-GET /days-of-week?page=1&limit=9&search=monday&sortBy=name-asc
-```
-
-**Response com paginação:**
-
-```json
-{
-  "days": [
-    {
-      "id": 1,
-      "name": "monday",
-      "scheduleConfigId": 1
-    },
-    {
-      "id": 2,
-      "name": "tuesday",
-      "scheduleConfigId": 1
-    }
-  ],
-  "pagination": {
-    "currentPage": 1,
-    "totalPages": 2,
-    "totalItems": 7,
-    "itemsPerPage": 9,
-    "hasNextPage": true,
-    "hasPrevPage": false,
-    "nextPage": 2,
-    "prevPage": null,
-    "lastPage": 2
-  }
-}
-```
-
 #### POST /days-of-week
 
 Cria um novo dia da semana.
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Apenas administradores
 
 **Body:**
 
@@ -439,9 +568,15 @@ Cria um novo dia da semana.
 
 Busca dia da semana por ID.
 
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Qualquer usuário aprovado
+
 #### PATCH /days-of-week/:id
 
 Atualiza um dia da semana.
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Apenas administradores
 
 **Body:**
 
@@ -453,11 +588,17 @@ Atualiza um dia da semana.
 
 #### DELETE /days-of-week/:id
 
-Deleta um dia da semana.
+Deleta um dia da semana (soft delete).
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Apenas administradores
 
 #### DELETE /days-of-week
 
-Deleta múltiplos dias da semana.
+Deleta múltiplos dias da semana (soft delete).
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Apenas administradores
 
 **Body:**
 
@@ -473,7 +614,10 @@ Deleta múltiplos dias da semana.
 
 #### GET /schedules
 
-Retorna a configuração de horário atual (apenas uma configuração global).
+Retorna a configuração de horário atual (singleton global).
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Qualquer usuário aprovado
 
 **Response:**
 
@@ -517,6 +661,9 @@ Retorna a configuração de horário atual (apenas uma configuração global).
 
 Cria a configuração de horário (apenas se não existir nenhuma).
 
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Apenas administradores
+
 **Body:**
 
 ```json
@@ -541,55 +688,12 @@ Cria a configuração de horário (apenas se não existir nenhuma).
 }
 ```
 
-**Response:**
-
-```json
-{
-  "id": 1,
-  "timeRanges": [
-    {
-      "start": "08:00",
-      "end": "10:00"
-    },
-    {
-      "start": "14:00",
-      "end": "16:00"
-    },
-    {
-      "start": "18:00",
-      "end": "20:00"
-    }
-  ],
-  "validFrom": "2025-01-01T00:00:00.000Z",
-  "validTo": "2025-12-31T23:59:59.000Z",
-  "days": [
-    {
-      "id": 1,
-      "name": "monday"
-    },
-    {
-      "id": 2,
-      "name": "tuesday"
-    },
-    {
-      "id": 3,
-      "name": "wednesday"
-    },
-    {
-      "id": 4,
-      "name": "thursday"
-    },
-    {
-      "id": 5,
-      "name": "friday"
-    }
-  ]
-}
-```
-
 #### PATCH /schedules
 
 Atualiza a configuração de horário existente.
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Apenas administradores
 
 **Body:**
 
@@ -613,15 +717,58 @@ Atualiza a configuração de horário existente.
 
 #### DELETE /schedules
 
-Remove a configuração de horário existente.
+Remove a configuração de horário existente (soft delete).
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Apenas administradores
 
 **Response:**
 
 ```json
 {
+  "success": true,
   "message": "Configuração removida com sucesso"
 }
 ```
+
+---
+
+### 🔗 Roles
+
+#### GET /roles
+
+Lista todos os roles disponíveis.
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Atendente ou superior
+
+#### POST /roles
+
+Cria um novo role.
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Apenas administradores
+
+#### GET /roles/:id
+
+Busca role por ID.
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Atendente ou superior
+
+#### PATCH /roles/:id
+
+Atualiza um role.
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Apenas administradores
+
+#### DELETE /roles/:id
+
+Deleta um role (soft delete).
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Apenas administradores
 
 ---
 
@@ -629,7 +776,10 @@ Remove a configuração de horário existente.
 
 #### GET /dashboard
 
-Retorna dados do dashboard para o usuário logado.
+Retorna dados do dashboard com analytics do sistema.
+
+**Autenticação:** Requerida (JWT + status aprovado)
+**Autorização:** Qualquer usuário aprovado
 
 **Response:**
 
@@ -670,7 +820,7 @@ Retorna dados do dashboard para o usuário logado.
     "confirmedDone": 2
   },
   "recentAppointments": [...],
-  "lastUpdated": "2025-01-20T10:00:00.000Z"
+  "lastUpdated": "2025-01-27T10:00:00.000Z"
 }
 ```
 
@@ -682,6 +832,7 @@ Retorna dados do dashboard para o usuário logado.
 - `201` - Criado com sucesso
 - `400` - Erro de validação
 - `401` - Não autorizado
+- `403` - Acesso negado
 - `404` - Não encontrado
 - `500` - Erro interno do servidor
 
@@ -708,10 +859,19 @@ Todos os endpoints que suportam paginação retornam a seguinte estrutura:
 ## Como usar no Postman/Insomnia
 
 1. Importe o arquivo `api-collection.json`
-2. Configure a variável `baseUrl` para `http://localhost:3000`
+2. Configure a variável `localhost` para `http://localhost:3001`
 3. Faça login usando o endpoint `/auth/login`
 4. Copie o token retornado e configure a variável `token`
 5. Todos os outros endpoints usarão automaticamente o token de autenticação
+
+### Variáveis de Ambiente
+
+```json
+{
+  "localhost": "http://localhost:3001",
+  "token": "seu_jwt_token_aqui"
+}
+```
 
 ## Exemplos de Uso
 
@@ -728,29 +888,53 @@ POST /auth/login
 # 2. Copiar o token da resposta e configurar na variável 'token'
 ```
 
-### 2. Listar Cadeiras com Paginação
+### 2. Registrar Novo Usuário
+
+```bash
+POST /users
+{
+  "username": "joao.silva",
+  "password": "senha123",
+  "roleId": 2,
+  "fullName": "João Silva Santos",
+  "cpf": "123.456.789-00",
+  "jobFunction": "Servidor Público",
+  "position": "Analista",
+  "registration": "12345",
+  "sector": "Tecnologia da Informação",
+  "email": "joao.silva@sejusp.go.gov.br",
+  "phone": "(62) 99999-9999",
+  "gender": "M",
+  "birthDate": "1990-01-01"
+}
+```
+
+### 3. Listar Cadeiras com Paginação
 
 ```bash
 GET /chairs?page=1&limit=9&status=ACTIVE&sortBy=newest
 ```
 
-### 3. Criar um Agendamento
+### 4. Buscar Horários Disponíveis
+
+```bash
+POST /appointments/available-times
+{
+  "date": "2025-01-27"
+}
+```
+
+### 5. Criar um Agendamento
 
 ```bash
 POST /appointments
 {
   "chairId": 1,
-  "datetimeStart": "2025-01-20T08:00:00.000Z"
+  "datetimeStart": "2025-01-27T08:00:00.000Z"
 }
 ```
 
-### 4. Buscar Horários Disponíveis
-
-```bash
-GET /appointments/available-times?date=2025-01-20&page=1&limit=3
-```
-
-### 5. Aprovar um Usuário
+### 6. Aprovar um Usuário
 
 ```bash
 PATCH /approvals/1
@@ -759,123 +943,38 @@ PATCH /approvals/1
 }
 ```
 
-## User Management
+## Campos RF02 - Cadastro de Usuário
 
-### Update User (PATCH)
+Todos os usuários devem preencher os seguintes campos obrigatórios:
 
-**Endpoint:** `PATCH /users/:id`
+- **fullName**: Nome completo
+- **cpf**: CPF (formato: 123.456.789-00)
+- **jobFunction**: Função
+- **position**: Cargo
+- **registration**: Matrícula (campo único)
+- **sector**: Setor
+- **email**: E-mail institucional (campo único)
+- **phone**: Telefone (formato: (62) 99999-9999)
+- **gender**: Sexo (valores: "M", "F", "Outro")
+- **birthDate**: Data de nascimento (formato: YYYY-MM-DD)
 
-**Description:** Updates a user's information. Users can update their own data, while admins can update any user's data.
+## Validações Implementadas
 
-**Authentication:** Required (JWT token)
+- **Email**: Formato válido e único
+- **CPF**: Formato válido e único
+- **Username**: Único no sistema
+- **Registration**: Único no sistema
+- **Gender**: Deve ser "M", "F" ou "Outro"
+- **Password**: Criptografado automaticamente com bcrypt
 
-**Authorization:**
+## Funcionalidade de Busca
 
-- Users can only update their own data
-- Admins can update any user's data
-
-**Request Body:** (All fields are optional - only send the fields you want to update)
-
-```json
-{
-  "username": "new_username",
-  "password": "new_password",
-  "roleId": 2,
-  "fullName": "New Full Name",
-  "cpf": "123.456.789-00",
-  "jobFunction": "New Job Function",
-  "position": "New Position",
-  "registration": "NEW123",
-  "sector": "New Sector",
-  "email": "newemail@example.com",
-  "phone": "(11) 99999-9999",
-  "gender": "M",
-  "birthDate": "1990-01-01"
-}
-```
-
-**Response (Success - 200):**
-
-```json
-{
-  "success": true,
-  "message": "Usuário atualizado com sucesso",
-  "data": {
-    "id": 1,
-    "username": "new_username",
-    "status": "approved",
-    "roleId": 2,
-    "fullName": "New Full Name",
-    "cpf": "123.456.789-00",
-    "jobFunction": "New Job Function",
-    "position": "New Position",
-    "registration": "NEW123",
-    "sector": "New Sector",
-    "email": "newemail@example.com",
-    "phone": "(11) 99999-9999",
-    "gender": "M",
-    "birthDate": "1990-01-01T00:00:00.000Z",
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T12:00:00.000Z"
-  }
-}
-```
-
-**Response (User Not Found - 404):**
-
-```json
-{
-  "success": false,
-  "message": "Usuário não encontrado",
-  "error": true
-}
-```
-
-**Response (Validation Error - 400):**
-
-```json
-{
-  "success": false,
-  "message": "E-mail inválido",
-  "error": true
-}
-```
-
-**Response (Authorization Error - 403):**
-
-```json
-{
-  "success": false,
-  "message": "Acesso negado. Você só pode atualizar seus próprios dados.",
-  "error": true
-}
-```
-
-**Example Usage:**
+A busca de usuários funciona em todos os campos:
+- Username, nome completo, CPF, email
+- Função, cargo, matrícula, setor
+- Telefone e dados pessoais
 
 ```bash
-# Update user's email and phone
-curl -X PATCH http://localhost:3000/users/1 \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "newemail@example.com",
-    "phone": "(11) 88888-8888"
-  }'
-
-# Update user's password
-curl -X PATCH http://localhost:3000/users/1 \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "password": "new_secure_password"
-  }'
+# Exemplo de busca
+GET /users?search=joao&page=1&limit=9
 ```
-
-**Notes:**
-
-- Only send the fields you want to update
-- Password will be automatically hashed
-- Unique fields (username, email, cpf, registration) will be validated for duplicates
-- Date fields should be in ISO format (YYYY-MM-DD)
-- Gender must be one of: "M", "F", "Outro"

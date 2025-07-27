@@ -74,16 +74,16 @@ export interface UserWithPagination {
     username: string;
     status: 'pending' | 'approved' | 'rejected';
     roleId: number;
-    fullName: string;
-    cpf: string;
-    jobFunction: string;
-    position: string;
-    registration: string;
-    sector: string;
-    email: string;
-    phone: string;
-    gender: string;
-    birthDate: Date;
+    fullName: string | null;
+    cpf: string | null;
+    jobFunction: string | null;
+    position: string | null;
+    registration: string | null;
+    sector: string | null;
+    email: string | null;
+    phone: string | null;
+    gender: string | null;
+    birthDate: Date | null;
     role?: {
       id: number;
       name: string;

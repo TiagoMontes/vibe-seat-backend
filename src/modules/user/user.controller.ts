@@ -218,7 +218,10 @@ export const userController = {
     }
   },
 
-  update: async (req: Request<{ id: string }, {}, UserUpdateInput>, res: Response) => {
+  update: async (
+    req: Request<{ id: string }, {}, UserUpdateInput>,
+    res: Response
+  ) => {
     try {
       const id = Number(req.params.id);
 
@@ -228,54 +231,6 @@ export const userController = {
           message: 'ID inválido',
           error: true,
         });
-      }
-
-      // Validate input fields if provided
-      const { email, cpf, gender, birthDate } = req.body;
-
-      // Email validation
-      if (email !== undefined) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-          return res.status(400).json({
-            success: false,
-            message: 'E-mail inválido',
-            error: true,
-          });
-        }
-      }
-
-      // CPF validation (basic format)
-      if (cpf !== undefined) {
-        const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/;
-        if (!cpfRegex.test(cpf)) {
-          return res.status(400).json({
-            success: false,
-            message: 'CPF deve estar no formato XXX.XXX.XXX-XX ou apenas números',
-            error: true,
-          });
-        }
-      }
-
-      // Gender validation
-      if (gender !== undefined && !['M', 'F', 'Outro'].includes(gender)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Sexo deve ser M, F ou Outro',
-          error: true,
-        });
-      }
-
-      // Birth date validation
-      if (birthDate !== undefined) {
-        const birthDateObj = new Date(birthDate);
-        if (isNaN(birthDateObj.getTime())) {
-          return res.status(400).json({
-            success: false,
-            message: 'Data de nascimento inválida',
-            error: true,
-          });
-        }
       }
 
       const updatedUser = await userService.update(id, req.body);

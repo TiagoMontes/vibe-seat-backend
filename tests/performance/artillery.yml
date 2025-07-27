@@ -1,17 +1,322 @@
 config:
   target: 'http://localhost:3001'
   phases:
-    - duration: 30 # duração reduzida para teste completo
-      arrivalRate: 30 # usuários por segundo (reduzido para fluxo completo)
-scenarios:
-  - name: fluxo-completo-sistema
-    flow:
-      # 1. LOGIN
-      - post:
-          url: /auth/login
-          json:
-            username: Administrador
-            password: admin123
+    # Fase 1: Ramp-up gradual
+    - duration: 60
+      arrivalRate: 5
+      rampTo: 20
+    # Fase 2: Carga sustentada
+    - duration: 120
+      arrivalRate: 20
+    # Fase 3: Pico de carga
+    - duration: 60
+      arrivalRate: 30
+    # Fase 4: Ramp-down
+    - duration: 60
+      arrivalRate: 30
+      rampTo: 5
+  processor: './performance-helpers.js'
 
-      # Pausa entre requisições
+scenarios:
+  # Cenário 1: Fluxo completo de administrador (20% dos usuários)
+  - name: admin-workflow
+    weight: 20
+    flow:
+      # 1. Admin faz login
+      - post:
+          url: '/auth/login'
+          json:
+            username: 'admin'
+            password: 'admin123'
+          capture:
+            - json: $.token
+              as: adminToken
+
+      - think: 2
+
+      # 2. Admin lista usuários pendentes
+      - get:
+          url: '/approvals/pending'
+          headers:
+            Authorization: 'Bearer {{ adminToken }}'
+          capture:
+            - json: $.data[0].id
+              as: pendingApprovalId
+              ifUndefined: skip
+
       - think: 1
+
+      # 3. Admin aprova um usuário (se houver)
+      - patch:
+          url: '/approvals/{{ pendingApprovalId }}'
+          headers:
+            Authorization: 'Bearer {{ adminToken }}'
+          json:
+            status: 'approved'
+          ifTrue: pendingApprovalId
+
+      - think: 2
+
+      # 4. Admin gerencia cadeiras
+      - get:
+          url: '/chairs'
+          headers:
+            Authorization: 'Bearer {{ adminToken }}'
+
+      - think: 1
+
+      # 5. Admin visualiza insights
+      - get:
+          url: '/chairs/insights'
+          headers:
+            Authorization: 'Bearer {{ adminToken }}'
+
+      - think: 2
+
+      # 6. Admin configura horários
+      - get:
+          url: '/schedules'
+          headers:
+            Authorization: 'Bearer {{ adminToken }}'
+
+      - think: 1
+
+      # 7. Admin visualiza dashboard
+      - get:
+          url: '/dashboard'
+          headers:
+            Authorization: 'Bearer {{ adminToken }}'
+
+  # Cenário 2: Fluxo de atendente (30% dos usuários)
+  - name: attendant-workflow
+    weight: 30
+    flow:
+      # 1. Criar conta de atendente
+      - post:
+          url: '/users'
+          beforeRequest: 'generateAttendantData'
+          json:
+            username: '{{ username }}'
+            password: '{{ password }}'
+            roleId: 2
+            fullName: '{{ fullName }}'
+            cpf: '{{ cpf }}'
+            jobFunction: 'Atendente'
+            position: 'Atendente de Massagem'
+            registration: '{{ registration }}'
+            sector: 'Atendimento'
+            email: '{{ email }}'
+            phone: '{{ phone }}'
+            gender: 'F'
+            birthDate: '1985-03-15'
+          capture:
+            - json: $.data.id
+              as: userId
+
+      - think: 3
+
+      # 2. Aguardar aprovação (simular tempo)
+      - think: 5
+
+      # 3. Tentar login (pode falhar se não aprovado ainda)
+      - post:
+          url: '/auth/login'
+          json:
+            username: '{{ username }}'
+            password: '{{ password }}'
+          capture:
+            - json: $.token
+              as: attendantToken
+              ifUndefined: skip
+
+      - think: 2
+
+      # 4. Se logou, visualizar agendamentos
+      - get:
+          url: '/appointments'
+          headers:
+            Authorization: 'Bearer {{ attendantToken }}'
+          ifTrue: attendantToken
+
+      - think: 1
+
+      # 5. Confirmar presença em agendamento
+      - get:
+          url: '/appointments/allStatus'
+          headers:
+            Authorization: 'Bearer {{ attendantToken }}'
+          capture:
+            - json: $.data.appointments[0].id
+              as: appointmentId
+              ifUndefined: skip
+          ifTrue: attendantToken
+
+      - patch:
+          url: '/appointments/{{ appointmentId }}/confirm'
+          headers:
+            Authorization: 'Bearer {{ attendantToken }}'
+          ifTrue: 'attendantToken && appointmentId'
+
+      - think: 2
+
+      # 6. Visualizar dashboard
+      - get:
+          url: '/dashboard'
+          headers:
+            Authorization: 'Bearer {{ attendantToken }}'
+          ifTrue: attendantToken
+
+  # Cenário 3: Fluxo de usuário comum (50% dos usuários)
+  - name: user-workflow
+    weight: 50
+    flow:
+      # 1. Criar conta de usuário
+      - post:
+          url: '/users'
+          beforeRequest: 'generateUserData'
+          json:
+            username: '{{ username }}'
+            password: '{{ password }}'
+            roleId: 1
+            fullName: '{{ fullName }}'
+            cpf: '{{ cpf }}'
+            jobFunction: '{{ jobFunction }}'
+            position: '{{ position }}'
+            registration: '{{ registration }}'
+            sector: '{{ sector }}'
+            email: '{{ email }}'
+            phone: '{{ phone }}'
+            gender: '{{ gender }}'
+            birthDate: '{{ birthDate }}'
+          capture:
+            - json: $.data.id
+              as: userId
+
+      - think: 5
+
+      # 2. Aguardar aprovação (simular tempo de aprovação)
+      - think: 10
+
+      # 3. Tentar login
+      - post:
+          url: '/auth/login'
+          json:
+            username: '{{ username }}'
+            password: '{{ password }}'
+          capture:
+            - json: $.token
+              as: userToken
+              ifUndefined: skip
+
+      - think: 2
+
+      # 4. Se logou, buscar dados completos do usuário
+      - get:
+          url: '/users/{{ userId }}'
+          headers:
+            Authorization: 'Bearer {{ userToken }}'
+          ifTrue: userToken
+
+      - think: 1
+
+      # 5. Visualizar cadeiras disponíveis
+      - get:
+          url: '/chairs'
+          headers:
+            Authorization: 'Bearer {{ userToken }}'
+          ifTrue: userToken
+
+      - think: 2
+
+      # 6. Buscar horários disponíveis
+      - post:
+          url: '/appointments/available-times'
+          headers:
+            Authorization: 'Bearer {{ userToken }}'
+          json:
+            date: '{{ availableDate }}'
+          beforeRequest: 'generateAvailableDate'
+          capture:
+            - json: $.data.chairs[0].available[0]
+              as: availableTime
+              ifUndefined: skip
+          ifTrue: userToken
+
+      - think: 3
+
+      # 7. Criar agendamento
+      - post:
+          url: '/appointments'
+          headers:
+            Authorization: 'Bearer {{ userToken }}'
+          json:
+            chairId: 1
+            datetimeStart: '{{ availableTime }}'
+          ifTrue: 'userToken && availableTime'
+          capture:
+            - json: $.data.id
+              as: appointmentId
+
+      - think: 2
+
+      # 8. Visualizar meus agendamentos
+      - get:
+          url: '/appointments/my-appointments'
+          headers:
+            Authorization: 'Bearer {{ userToken }}'
+          ifTrue: userToken
+
+      - think: 5
+
+      # 9. Cancelar agendamento (50% de chance)
+      - patch:
+          url: '/appointments/{{ appointmentId }}/cancel'
+          headers:
+            Authorization: 'Bearer {{ userToken }}'
+          ifTrue: 'userToken && appointmentId'
+          probability: 0.5
+
+  # Cenário 4: Stress test de endpoints públicos
+  - name: public-endpoints-stress
+    weight: 10
+    flow:
+      # 1. Tentar login com credenciais inválidas
+      - post:
+          url: '/auth/login'
+          json:
+            username: 'invalid'
+            password: 'invalid'
+          expect:
+            - statusCode: 401
+
+      - think: 1
+
+      # 2. Criar usuário com dados inválidos
+      - post:
+          url: '/users'
+          json:
+            username: 'test'
+            password: 'test'
+            roleId: 1
+            fullName: 'Test User'
+            cpf: 'invalid-cpf'
+            email: 'invalid-email'
+          expect:
+            - statusCode: 400
+
+      - think: 2
+
+      # 3. Tentar acessar rota protegida sem token
+      - get:
+          url: '/appointments'
+          expect:
+            - statusCode: 401
+
+# Configurações de métricas
+metrics:
+  - name: 'response_time'
+    unit: 'ms'
+  - name: 'errors'
+    unit: 'count'
+  - name: 'requests_per_second'
+    unit: 'rps'
