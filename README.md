@@ -150,7 +150,7 @@ http://localhost:3001
 ### Principais Módulos da API
 
 - **Autenticação** (`/auth`) - Login e gerenciamento de tokens JWT
-- **Usuários** (`/users`) - Gestão de usuários com campos RF02 completos
+- **Usuários** (`/users`) - Gestão de usuários com campos completos
 - **Aprovações** (`/approvals`) - Workflow de aprovação hierárquica
 - **Cadeiras** (`/chairs`) - Gerenciamento de cadeiras de massagem
 - **Agendamentos** (`/appointments`) - Sistema de booking com regras de negócio
@@ -171,7 +171,7 @@ http://localhost:3001
 
 #### Modelos Principais
 
-- **User**: Usuários com campos RF02 completos (CPF, matrícula, setor, etc.)
+- **User**: Usuários com campos completos (CPF, matrícula, setor, etc.)
 - **Role**: Perfis de acesso (admin, attendant, user)
 - **UserApproval**: Workflow de aprovação com status pending/approved/rejected
 - **Chair**: Cadeiras com status ACTIVE/MAINTENANCE/INACTIVE

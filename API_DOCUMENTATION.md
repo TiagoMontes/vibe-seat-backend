@@ -171,7 +171,7 @@ GET /users?page=1&limit=9&search=admin&status=approved&sortBy=newest
 
 #### POST /users
 
-Cria um novo usuário com campos RF02 completos.
+Cria um novo usuário com campos completos.
 
 **Autenticação:** Não requerida (rota pública para registro)
 
@@ -943,7 +943,7 @@ PATCH /approvals/1
 }
 ```
 
-## Campos RF02 - Cadastro de Usuário
+## Cadastro de Usuário
 
 Todos os usuários devem preencher os seguintes campos obrigatórios:
 

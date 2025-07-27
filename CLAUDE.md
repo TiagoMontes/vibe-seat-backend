@@ -123,7 +123,7 @@ Each module contains:
 - 30-minute appointment duration
 - Appointments only allowed within configured schedule hours and days
 
-**User Registration (RF02):**
+**User Registration:**
 
 - Required fields: Nome completo, CPF, Função, Cargo, Matrícula, Setor, E-mail, Telefone, Sexo, Data de nascimento, Tipo de usuário
 - Unique constraints: username, cpf, email, registration

@@ -117,7 +117,7 @@
           }
         },
         {
-          "name": "Criar Usuário (RF02)",
+          "name": "Criar Usuário",
           "request": {
             "method": "POST",
             "header": [
@@ -135,7 +135,7 @@
               "host": ["{{localhost}}"],
               "path": ["users"]
             },
-            "description": "Cria usuário com campos RF02 completos",
+            "description": "Cria usuário com campos completos",
             "auth": {
               "type": "noauth"
             }

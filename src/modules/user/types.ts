@@ -2,7 +2,6 @@ export interface UserInput {
   username: string;
   password: string;
   roleId: number;
-  // RF02 - Required fields
   fullName?: string;
   cpf?: string;
   jobFunction?: string;
