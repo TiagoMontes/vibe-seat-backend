@@ -58,7 +58,8 @@ Este script faz automaticamente:
 
 1. `docker compose build` - Constrói as imagens
 2. `docker compose up -d` - Sobe os containers em background
-3. Executa bash dentro do container da aplicação
+3. executa os comandos de seed-amin.ts e seed-days-of-week.ts
+4. Executa bash dentro do container da aplicação
 
 ### Desenvolvimento Local
 

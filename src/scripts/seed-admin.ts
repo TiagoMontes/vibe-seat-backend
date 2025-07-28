@@ -31,7 +31,7 @@ async function main() {
         password: await Bun.password.hash('admin123', 'bcrypt'),
         roleId: roleAdmin.id,
         status: 'approved',
-        fullname: 'Administrador do Sistema',
+        fullName: 'Administrador do Sistema',
         cpf: '000.000.000-00',
         jobFunction: 'Administrador',
         position: 'Admin',
