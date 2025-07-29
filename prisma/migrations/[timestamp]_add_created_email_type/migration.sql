@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `EmailLog` MODIFY `emailType` ENUM('CONFIRMATION', 'REMINDER', 'CREATED') NOT NULL; 

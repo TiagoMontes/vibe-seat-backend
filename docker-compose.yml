@@ -22,7 +22,19 @@ services:
       db:
         condition: service_healthy
     environment:
+      # Configuração do Banco de Dados
       DATABASE_URL: mysql://root:root@db:3306/vibe-seat-db?connection_limit=50
+      
+      # 📧 Configuração de Email (Mailtrap)
+      # IMPORTANTE: Substitua pelas suas credenciais do Mailtrap
+      # 1. Acesse https://mailtrap.io
+      # 2. Vá em Email Testing > Inboxes
+      # 3. Copie o API Token e Inbox ID
+      MAILTRAP_API_TOKEN: 7161982d1317f7c05a3e85b7083f0faf  # Substitua pelo seu token
+      MAILTRAP_INBOX_ID: 3928333                              # Substitua pelo seu inbox ID
+      
+      # Email remetente padrão (opcional)
+      DEFAULT_FROM_EMAIL: noreply@sejusp.gov.br
     volumes:
       - .:/app
       - /app/node_modules

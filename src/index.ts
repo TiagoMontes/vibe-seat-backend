@@ -8,6 +8,7 @@ import { dayOfWeekRoutes } from './modules/dayOfWeek/dayOfWeek.routes';
 import { appointmentRoutes } from './modules/appointment/appointment.routes';
 import { roleRoutes } from './modules/role/role.routes';
 import { dashboardRoutes } from './modules/dashboard/dashboard.routes';
+import { emailScheduler } from './modules/email/email.scheduler';
 
 const app = express();
 app.use(express.json());
@@ -29,4 +30,7 @@ app.get('/', (_req, res) => {
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
+
+  // Inicializar o scheduler de emails
+  emailScheduler.start();
 });

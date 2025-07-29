@@ -32,15 +32,43 @@ git clone <URL_DO_REPOSITORIO>
 cd backend
 ```
 
-### 2. Configuração do Banco de Dados
+### 2. Configuração de Variáveis de Ambiente
 
-O projeto está configurado para usar apenas o banco de dados do Docker. A variável `DATABASE_URL` é automaticamente definida no `docker-compose.yml`:
+O projeto está configurado para usar as variáveis de ambiente definidas no `docker-compose.yml`. Para funcionamento completo, configure as seguintes variáveis:
 
-```env
-DATABASE_URL=mysql://root:root@db:3306/sejusp-db?connection_limit=50
+#### 📧 Configuração de Email (Mailtrap)
+
+Para o sistema de emails automáticos funcionar, você precisa configurar as credenciais do Mailtrap no `docker-compose.yml`:
+
+```yaml
+environment:
+  DATABASE_URL: mysql://root:root@db:3306/vibe-seat-db?connection_limit=50
+  MAILTRAP_API_TOKEN: seu_token_da_api_mailtrap
+  MAILTRAP_INBOX_ID: seu_inbox_id
+  DEFAULT_FROM_EMAIL: noreply@sejusp.gov.br
 ```
 
-**⚠️ Importante**: Não crie um arquivo `.env` local, pois isso pode causar conflitos com o banco do Docker.
+#### Como obter as credenciais do Mailtrap:
+
+1. **Crie uma conta** em [mailtrap.io](https://mailtrap.io)
+2. **Acesse o Email Testing** no painel
+3. **Crie ou acesse seu inbox**
+4. **Copie as credenciais**:
+   - `MAILTRAP_API_TOKEN`: Token da API na seção "API Tokens"
+   - `MAILTRAP_INBOX_ID`: ID do inbox (número na URL ou seção "Settings")
+
+#### ⚠️ Variáveis Obrigatórias para Email:
+
+- `MAILTRAP_API_TOKEN` - Token de acesso à API do Mailtrap
+- `MAILTRAP_INBOX_ID` - ID da caixa de entrada para testes
+- `DEFAULT_FROM_EMAIL` - Email remetente padrão (opcional)
+
+**Sem essas configurações**, o sistema funcionará normalmente, mas **não enviará emails automáticos** de:
+- Criação de agendamento
+- Confirmação de presença  
+- Lembretes de agendamento
+
+**⚠️ Importante**: Não crie um arquivo `.env` local, pois isso pode causar conflitos com as configurações do Docker.
 
 ---
 
@@ -65,7 +93,7 @@ Este script faz automaticamente:
 
 Para desenvolvimento local, é recomendado usar o Docker para manter a consistência do ambiente:
 
-```bash
+````bash
 # Usar Docker
 bun run start:docker
 
@@ -79,7 +107,7 @@ Após alterar o schema em `prisma/schema.prisma`, gere uma nova migration:
 
 ```bash
 bunx prisma migrate dev --name nome-da-migration
-```
+````
 
 ### Comandos Úteis
 
@@ -149,6 +177,7 @@ http://localhost(ou seu ip):3001
 - **Dias da Semana** (`/days-of-week`) - Gestão de dias disponíveis
 - **Roles** (`/roles`) - Controle de perfis e permissões
 - **Dashboard** (`/dashboard`) - Analytics e visão geral do sistema
+- **📧 Emails** - Sistema automático de notificações por email
 
 ### Arquitetura do Sistema
 
@@ -209,14 +238,34 @@ src/modules/
 ├── schedule/       # Configuração de horários
 ├── dayOfWeek/      # Dias da semana
 ├── appointment/    # Sistema de agendamentos
+├── email/          # Sistema de emails automáticos
 └── dashboard/      # Analytics e métricas
 ```
 
+#### 📧 Sistema de Emails
+
+O módulo de email (`src/modules/email/`) implementa:
+
+- **email.service.ts** - Serviço principal usando Mailtrap REST API  
+- **email.templates.ts** - Templates HTML responsivos para emails
+- **email.scheduler.ts** - Agendador para envio de lembretes
+- **types.ts** - Tipos TypeScript para dados de email
+
+**Funcionalidades:**
+- ✅ Email de criação de agendamento
+- ✅ Email de confirmação de presença
+- ✅ Email de lembrete (1h antes do agendamento)
+- ✅ Logs de email com status (PENDING/SENT/FAILED)
+- ✅ Templates HTML com dados personalizados
+- ✅ Prevenção de emails duplicados
+
 Cada módulo contém:
+
 - `*.controller.ts` - Controladores de requisições
 - `*.service.ts` - Lógica de negócio
 
 ### Login para utilizar na primeira vez
+
 - para logar pela primeira vez, após utilizar o comando bun run start:docker, você pode utilizar as seguintes credenciais
 - "username": "admin"
 - "password": "admin123"

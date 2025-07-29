@@ -1,9 +1,6 @@
 import type { Request, Response } from 'express';
 import { chairService } from '@/modules/chair/chair.service';
-import type {
-  ChairInput,
-  ChairQueryParams,
-} from '@/modules/chair/types';
+import type { ChairInput, ChairQueryParams } from '@/modules/chair/types';
 
 export const chairController = {
   create: async (req: Request<{}, {}, ChairInput>, res: Response) => {

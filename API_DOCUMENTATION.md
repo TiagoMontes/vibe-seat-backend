@@ -19,12 +19,14 @@ A API usa autenticação JWT Bearer Token. Após fazer login, use o token retorn
 **user < attendant < admin**
 
 ### Usuário (user)
+
 - Criar e cancelar próprios agendamentos (máx 1 ativo)
 - Visualizar horários disponíveis
 - Visualizar cadeiras e configurações
 - Atualizar próprios dados
 
 ### Atendente (attendant)
+
 - Todas as permissões de usuário
 - Aprovar/rejeitar registros de usuários
 - Visualizar e gerenciar todos os agendamentos
@@ -32,6 +34,7 @@ A API usa autenticação JWT Bearer Token. Após fazer login, use o token retorn
 - Visualizar dashboard e analytics
 
 ### Administrador (admin)
+
 - Todas as permissões de atendente
 - Aprovar registros de atendentes
 - Gerenciar cadeiras (criar, editar, deletar)
@@ -79,27 +82,23 @@ Realiza login do usuário e retorna token JWT.
 
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": 1,
-    "username": "admin",
-    "fullName": "Administrador do Sistema",
-    "status": "approved",
-    "role": {
-      "id": 1,
-      "name": "admin"
-    }
-  }
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
-**Response (Erro - 401):**
+**Response (Erro - 401 - Credenciais inválidas):**
 
 ```json
 {
-  "success": false,
-  "message": "Credenciais inválidas",
-  "error": true
+  "error": "Credenciais inválidas ou não aprovadas"
+}
+```
+
+**Response (Erro - 401 - Senha incorreta):**
+
+```json
+{
+  "error": "Senha incorreta"
 }
 ```
 
@@ -211,12 +210,94 @@ Cria um novo usuário com campos completos.
 }
 ```
 
+**Response (Erro - 400 - Campo obrigatório):**
+
+```json
+{
+  "success": false,
+  "message": "Campo obrigatório ausente: fullName",
+  "error": true
+}
+```
+
+**Response (Erro - 400 - Email inválido):**
+
+```json
+{
+  "success": false,
+  "message": "E-mail inválido",
+  "error": true
+}
+```
+
+**Response (Erro - 400 - CPF inválido):**
+
+```json
+{
+  "success": false,
+  "message": "CPF deve estar no formato XXX.XXX.XXX-XX ou apenas números",
+  "error": true
+}
+```
+
+**Response (Erro - 400 - Dados duplicados):**
+
+```json
+{
+  "success": false,
+  "message": "Username já existe",
+  "error": true
+}
+```
+
 #### GET /users/:id
 
 Busca usuário por ID.
 
 **Autenticação:** Requerida (JWT + status aprovado)
 **Autorização:** Atendente ou superior
+
+**Response (Sucesso - 200):**
+
+```json
+{
+  "success": true,
+  "message": "Usuário encontrado",
+  "data": {
+    "id": 1,
+    "username": "admin",
+    "status": "approved",
+    "roleId": 1,
+    "fullName": "Administrador do Sistema",
+    "email": "admin@sejusp.go.gov.br",
+    "role": {
+      "id": 1,
+      "name": "admin"
+    }
+  }
+}
+```
+
+**Response (Erro - 400):**
+
+```json
+{
+  "success": false,
+  "message": "ID inválido",
+  "error": true
+}
+```
+
+**Response (Erro - 404):**
+
+```json
+{
+  "success": false,
+  "message": "Usuário não encontrado",
+  "data": null,
+  "error": true
+}
+```
 
 #### PATCH /users/:id
 
@@ -238,12 +319,78 @@ Atualiza dados do usuário.
 }
 ```
 
+**Response (Sucesso - 200):**
+
+```json
+{
+  "success": true,
+  "message": "Usuário atualizado com sucesso",
+  "data": {
+    "id": 1,
+    "username": "novo_username",
+    "fullName": "Novo Nome Completo",
+    "email": "novo.email@sejusp.go.gov.br",
+    "updatedAt": "2025-01-27T10:00:00.000Z"
+  }
+}
+```
+
+**Response (Erro - 400):**
+
+```json
+{
+  "success": false,
+  "message": "ID inválido",
+  "error": true
+}
+```
+
+**Response (Erro - 404):**
+
+```json
+{
+  "success": false,
+  "message": "Usuário não encontrado",
+  "error": true
+}
+```
+
 #### DELETE /users/:id
 
 Deleta um usuário (soft delete).
 
 **Autenticação:** Requerida (JWT + status aprovado)
 **Autorização:** Apenas administradores
+
+**Response (Sucesso - 200):**
+
+```json
+{
+  "success": true,
+  "message": "Usuário excluído com sucesso",
+  "deletedId": 1
+}
+```
+
+**Response (Erro - 400):**
+
+```json
+{
+  "success": false,
+  "message": "ID inválido",
+  "error": true
+}
+```
+
+**Response (Erro - 404):**
+
+```json
+{
+  "success": false,
+  "message": "Usuário não encontrado",
+  "error": true
+}
+```
 
 ---
 
@@ -352,6 +499,34 @@ Lista todos os agendamentos com paginação opcional.
 GET /appointments?page=1&limit=9&search=admin&status=SCHEDULED&sortBy=newest
 ```
 
+#### 📧 Sistema de Emails Automáticos
+
+O sistema envia emails automáticos para os usuários em três momentos:
+
+1. **Email de Criação** - Enviado quando um agendamento é criado
+2. **Email de Confirmação** - Enviado quando o atendente confirma a presença
+3. **Email de Lembrete** - Enviado 1 hora antes do agendamento (via scheduler)
+
+**Configuração de Email:**
+
+- **Provedor**: Mailtrap (ambiente de desenvolvimento/teste)
+- **API**: REST API do Mailtrap
+- **Templates**: HTML responsivos com dados do agendamento
+- **Logs**: Todos os emails são registrados na tabela `EmailLog`
+
+**Dados incluídos nos emails:**
+
+- Nome do usuário
+- Data e horário do agendamento
+- Nome e localização da cadeira
+- Status do agendamento
+- Instruções relevantes
+
+**Estados dos emails:**
+- `PENDING`: Email criado, aguardando envio
+- `SENT`: Email enviado com sucesso
+- `FAILED`: Falha no envio do email
+
 #### GET /appointments/my-appointments
 
 Lista agendamentos do usuário logado com estatísticas.
@@ -426,6 +601,7 @@ Cria um novo agendamento.
 **Autorização:** Qualquer usuário aprovado
 
 **Regras de Negócio:**
+
 - Máximo 1 agendamento ativo por usuário
 - Horário deve estar dentro da configuração de funcionamento
 - Cadeira deve estar disponível no horário
@@ -465,8 +641,53 @@ Cancela um agendamento.
 **Autorização:** Próprio usuário ou atendente/admin
 
 **Regras de Negócio:**
+
 - Cancelamento com mínimo 3h de antecedência (exceto admins)
 - Apenas agendamentos com status SCHEDULED podem ser cancelados
+
+**Response (Sucesso - 200):**
+
+```json
+{
+  "success": true,
+  "message": "Agendamento cancelado com sucesso",
+  "data": {
+    "id": 25,
+    "status": "CANCELLED",
+    "updatedAt": "2025-01-27T10:00:00.000Z"
+  }
+}
+```
+
+**Response (Erro - 400 - ID inválido):**
+
+```json
+{
+  "success": false,
+  "message": "ID inválido",
+  "error": true
+}
+```
+
+**Response (Erro - 400 - Regra de negócio):**
+
+```json
+{
+  "success": false,
+  "message": "Cancelamento deve ser feito com pelo menos 3 horas de antecedência",
+  "error": true
+}
+```
+
+**Response (Erro - 404):**
+
+```json
+{
+  "success": false,
+  "message": "Agendamento não encontrado",
+  "error": true
+}
+```
 
 #### PATCH /appointments/:id/confirm
 
@@ -474,6 +695,40 @@ Confirma presença do usuário na sessão.
 
 **Autenticação:** Requerida (JWT + status aprovado)
 **Autorização:** Atendente ou superior
+
+**Response (Sucesso - 200):**
+
+```json
+{
+  "success": true,
+  "message": "Agendamento confirmado com sucesso",
+  "data": {
+    "id": 25,
+    "status": "CONFIRMED",
+    "updatedAt": "2025-01-27T10:00:00.000Z"
+  }
+}
+```
+
+**Response (Erro - 400):**
+
+```json
+{
+  "success": false,
+  "message": "ID inválido",
+  "error": true
+}
+```
+
+**Response (Erro - 404):**
+
+```json
+{
+  "success": false,
+  "message": "Agendamento não encontrado",
+  "error": true
+}
+```
 
 ---
 
@@ -522,6 +777,7 @@ Atualiza status da aprovação.
 **Autorização:** Atendente (para usuários) ou Admin (para atendentes)
 
 **Regras de Negócio:**
+
 - Atendentes podem aprovar registros de usuários
 - Administradores podem aprovar registros de atendentes
 - Administradores podem aprovar qualquer registro
@@ -610,58 +866,112 @@ Deleta múltiplos dias da semana (soft delete).
 
 ---
 
+## 📋 Documentação Completa - Endpoints `/schedules`
+
 ### ⏰ Configurações de Horário
 
 #### GET /schedules
 
 Retorna a configuração de horário atual (singleton global).
 
-**Autenticação:** Requerida (JWT + status aprovado)
+**Autenticação:** Requerida (JWT + status aprovado)  
 **Autorização:** Qualquer usuário aprovado
 
-**Response:**
+**Response (Sucesso - 200):**
 
 ```json
 {
-  "id": 1,
-  "timeRanges": [
-    {
-      "start": "08:00",
-      "end": "10:00"
-    },
-    {
-      "start": "14:00",
-      "end": "16:00"
-    },
-    {
-      "start": "18:00",
-      "end": "20:00"
-    }
-  ],
-  "validFrom": "2025-01-01T00:00:00.000Z",
-  "validTo": "2025-12-31T23:59:59.000Z",
-  "days": [
-    {
-      "id": 1,
-      "name": "monday"
-    },
-    {
-      "id": 2,
-      "name": "tuesday"
-    },
-    {
-      "id": 3,
-      "name": "wednesday"
-    }
-  ]
+  "success": true,
+  "message": "Configuração de agenda encontrada",
+  "data": {
+    "id": 1,
+    "timeRanges": [
+      {
+        "start": "08:00",
+        "end": "10:00"
+      },
+      {
+        "start": "14:00",
+        "end": "16:00"
+      },
+      {
+        "start": "18:00",
+        "end": "20:00"
+      }
+    ],
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validTo": "2025-12-31T23:59:59.000Z",
+    "createdAt": "2025-01-27T10:00:00.000Z",
+    "updatedAt": "2025-01-27T10:00:00.000Z",
+    "deletedAt": null,
+    "days": [
+      {
+        "id": 1,
+        "name": "monday",
+        "scheduleConfigId": 1,
+        "createdAt": "2025-01-27T10:00:00.000Z",
+        "updatedAt": "2025-01-27T10:00:00.000Z",
+        "deletedAt": null
+      },
+      {
+        "id": 2,
+        "name": "tuesday",
+        "scheduleConfigId": 1,
+        "createdAt": "2025-01-27T10:00:00.000Z",
+        "updatedAt": "2025-01-27T10:00:00.000Z",
+        "deletedAt": null
+      }
+    ]
+  }
 }
 ```
+
+**Response (Erro - 404 - Configuração não encontrada):**
+
+```json
+{
+  "success": false,
+  "message": "Nenhuma configuração de agenda encontrada",
+  "data": null,
+  "error": true
+}
+```
+
+**Response (Erro - 500 - Erro interno):**
+
+```json
+{
+  "success": false,
+  "message": "Erro interno do servidor",
+  "error": true
+}
+```
+
+---
+
+#### GET /schedules/:id
+
+Retorna a configuração de horário por ID (sempre ID = 1, pois é singleton).
+
+**Autenticação:** Requerida (JWT + status aprovado)  
+**Autorização:** Qualquer usuário aprovado
+
+**Response (Sucesso - 200):**
+_Mesma estrutura do GET /schedules_
+
+**Response (Erro - 404 - Configuração não encontrada):**
+_Mesma estrutura do GET /schedules_
+
+**Response (Erro - 500 - Erro interno):**
+_Mesma estrutura do GET /schedules_
+
+---
 
 #### POST /schedules
 
 Cria a configuração de horário (apenas se não existir nenhuma).
 
-**Autenticação:** Requerida (JWT + status aprovado)
+**Autenticação:** Requerida (JWT + status aprovado)  
 **Autorização:** Apenas administradores
 
 **Body:**
@@ -688,14 +998,97 @@ Cria a configuração de horário (apenas se não existir nenhuma).
 }
 ```
 
-#### PATCH /schedules
+**Response (Sucesso - 201):**
+
+```json
+{
+  "success": true,
+  "message": "Configuração de agenda criada com sucesso",
+  "data": {
+    "id": 1,
+    "timeRanges": [
+      {
+        "start": "08:00",
+        "end": "10:00"
+      },
+      {
+        "start": "14:00",
+        "end": "16:00"
+      },
+      {
+        "start": "18:00",
+        "end": "20:00"
+      }
+    ],
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validTo": "2025-12-31T23:59:59.000Z",
+    "createdAt": "2025-01-27T10:00:00.000Z",
+    "updatedAt": "2025-01-27T10:00:00.000Z",
+    "deletedAt": null,
+    "days": [
+      {
+        "id": 1,
+        "name": "monday",
+        "scheduleConfigId": 1,
+        "createdAt": "2025-01-27T10:00:00.000Z",
+        "updatedAt": "2025-01-27T10:00:00.000Z",
+        "deletedAt": null
+      }
+    ]
+  }
+}
+```
+
+**Response (Erro - 400 - Configuração já existe):**
+
+```json
+{
+  "success": false,
+  "message": "Já existe uma configuração de agenda.",
+  "error": true
+}
+```
+
+**Response (Erro - 400 - Sobreposição de horários):**
+
+```json
+{
+  "success": false,
+  "message": "Existe sobreposição entre os horários configurados.",
+  "error": true
+}
+```
+
+**Response (Erro - 400 - Dias não encontrados):**
+
+```json
+{
+  "success": false,
+  "message": "Dias da semana não encontrados: 6, 7",
+  "error": true
+}
+```
+
+**Response (Erro - 400 - Erro genérico):**
+
+```json
+{
+  "success": false,
+  "message": "Erro ao criar configuração de agenda",
+  "error": true
+}
+```
+
+---
+
+#### PATCH /schedules/:id
 
 Atualiza a configuração de horário existente.
 
-**Autenticação:** Requerida (JWT + status aprovado)
+**Autenticação:** Requerida (JWT + status aprovado)  
 **Autorização:** Apenas administradores
 
-**Body:**
+**Body (Campos opcionais):**
 
 ```json
 {
@@ -715,126 +1108,696 @@ Atualiza a configuração de horário existente.
 }
 ```
 
-#### DELETE /schedules
-
-Remove a configuração de horário existente (soft delete).
-
-**Autenticação:** Requerida (JWT + status aprovado)
-**Autorização:** Apenas administradores
-
-**Response:**
+**Response (Sucesso - 200):**
 
 ```json
 {
   "success": true,
-  "message": "Configuração removida com sucesso"
+  "message": "Configuração de agenda atualizada com sucesso",
+  "data": {
+    "id": 1,
+    "timeRanges": [
+      {
+        "start": "09:00",
+        "end": "11:00"
+      },
+      {
+        "start": "15:00",
+        "end": "17:00"
+      }
+    ],
+    "validFrom": "2025-02-01T00:00:00.000Z",
+    "validTo": "2025-12-31T23:59:59.000Z",
+    "createdAt": "2025-01-27T10:00:00.000Z",
+    "updatedAt": "2025-01-27T11:00:00.000Z",
+    "deletedAt": null,
+    "days": [
+      {
+        "id": 1,
+        "name": "monday",
+        "scheduleConfigId": 1,
+        "createdAt": "2025-01-27T10:00:00.000Z",
+        "updatedAt": "2025-01-27T11:00:00.000Z",
+        "deletedAt": null
+      }
+    ]
+  }
 }
 ```
 
----
-
-### 🔗 Roles
-
-#### GET /roles
-
-Lista todos os roles disponíveis.
-
-**Autenticação:** Requerida (JWT + status aprovado)
-**Autorização:** Atendente ou superior
-
-#### POST /roles
-
-Cria um novo role.
-
-**Autenticação:** Requerida (JWT + status aprovado)
-**Autorização:** Apenas administradores
-
-#### GET /roles/:id
-
-Busca role por ID.
-
-**Autenticação:** Requerida (JWT + status aprovado)
-**Autorização:** Atendente ou superior
-
-#### PATCH /roles/:id
-
-Atualiza um role.
-
-**Autenticação:** Requerida (JWT + status aprovado)
-**Autorização:** Apenas administradores
-
-#### DELETE /roles/:id
-
-Deleta um role (soft delete).
-
-**Autenticação:** Requerida (JWT + status aprovado)
-**Autorização:** Apenas administradores
-
----
-
-### 📊 Dashboard
-
-#### GET /dashboard
-
-Retorna dados do dashboard com analytics do sistema.
-
-**Autenticação:** Requerida (JWT + status aprovado)
-**Autorização:** Qualquer usuário aprovado
-
-**Response:**
+**Response (Erro - 404 - Configuração não encontrada):**
 
 ```json
 {
-  "overview": {
-    "totalUsers": 45,
-    "totalChairs": 25,
-    "totalAppointments": 120,
-    "pendingApprovals": 10
-  },
-  "today": {
-    "appointments": 8
-  },
-  "tomorrow": {
-    "appointments": 12
-  },
-  "chairs": {
-    "total": 25,
-    "active": 20,
-    "maintenance": 3,
-    "inactive": 2
-  },
-  "appointments": {
-    "total": 120,
-    "scheduled": 30,
-    "confirmed": 80,
-    "cancelled": 10,
-    "confirmedUpcoming": 25,
-    "confirmedDone": 55
-  },
-  "userAppointments": {
-    "total": 5,
-    "scheduled": 2,
-    "confirmed": 3,
-    "cancelled": 0,
-    "confirmedUpcoming": 1,
-    "confirmedDone": 2
-  },
-  "recentAppointments": [...],
-  "lastUpdated": "2025-01-27T10:00:00.000Z"
+  "success": false,
+  "message": "Nenhuma configuração encontrada para atualizar.",
+  "error": true
+}
+```
+
+**Response (Erro - 400 - Sobreposição de horários):**
+
+```json
+{
+  "success": false,
+  "message": "Existe sobreposição entre os horários configurados.",
+  "error": true
+}
+```
+
+**Response (Erro - 400 - Dias não encontrados):**
+
+```json
+{
+  "success": false,
+  "message": "Dias da semana não encontrados: 6, 7",
+  "error": true
+}
+```
+
+**Response (Erro - 400 - Erro genérico):**
+
+```json
+{
+  "success": false,
+  "message": "Erro ao atualizar configuração de agenda",
+  "error": true
 }
 ```
 
 ---
 
-## Códigos de Status HTTP
+#### PATCH /schedules/:id/days
 
-- `200` - Sucesso
-- `201` - Criado com sucesso
-- `400` - Erro de validação
-- `401` - Não autorizado
-- `403` - Acesso negado
-- `404` - Não encontrado
+Atualiza apenas os dias da semana vinculados à configuração.
+
+**Autenticação:** Requerida (JWT + status aprovado)  
+**Autorização:** Apenas administradores
+
+**Body:**
+
+```json
+{
+  "dayIds": [1, 2, 3, 4, 5]
+}
+```
+
+**Response (Sucesso - 200):**
+
+```json
+{
+  "success": true,
+  "message": "Dias da semana atualizados com sucesso",
+  "data": {
+    "id": 1,
+    "timeRanges": [
+      {
+        "start": "08:00",
+        "end": "10:00"
+      }
+    ],
+    "validFrom": "2025-01-01T00:00:00.000Z",
+    "validTo": "2025-12-31T23:59:59.000Z",
+    "createdAt": "2025-01-27T10:00:00.000Z",
+    "updatedAt": "2025-01-27T11:00:00.000Z",
+    "deletedAt": null,
+    "days": [
+      {
+        "id": 1,
+        "name": "monday",
+        "scheduleConfigId": 1,
+        "createdAt": "2025-01-27T10:00:00.000Z",
+        "updatedAt": "2025-01-27T11:00:00.000Z",
+        "deletedAt": null
+      },
+      {
+        "id": 2,
+        "name": "tuesday",
+        "scheduleConfigId": 1,
+        "createdAt": "2025-01-27T10:00:00.000Z",
+        "updatedAt": "2025-01-27T11:00:00.000Z",
+        "deletedAt": null
+      }
+    ]
+  }
+}
+```
+
+**Response (Erro - 400 - Configuração não encontrada):**
+
+```json
+{
+  "success": false,
+  "message": "Nenhuma configuração encontrada para atualizar.",
+  "error": true
+}
+```
+
+**Response (Erro - 400 - Dias não encontrados):**
+
+```json
+{
+  "success": false,
+  "message": "Dias da semana não encontrados: 6, 7",
+  "error": true
+}
+```
+
+**Response (Erro - 400 - dayIds inválido):**
+
+```json
+{
+  "success": false,
+  "message": "dayIds deve ser um array de números",
+  "error": true
+}
+```
+
+**Response (Erro - 400 - Erro genérico):**
+
+```json
+{
+  "success": false,
+  "message": "Erro ao atualizar dias da semana",
+  "error": true
+}
+```
+
+---
+
+#### DELETE /schedules/:id
+
+Remove a configuração de horário existente (soft delete).
+
+**Autenticação:** Requerida (JWT + status aprovado)  
+**Autorização:** Apenas administradores
+
+**Response (Sucesso - 200):**
+
+```json
+{
+  "success": true,
+  "message": "Configuração de agenda removida com sucesso"
+}
+```
+
+**Response (Erro - 404 - Configuração não encontrada):**
+
+```json
+{
+  "success": false,
+  "message": "Nenhuma configuração encontrada para deletar.",
+  "error": true
+}
+```
+
+**Response (Erro - 500 - Erro interno):**
+
+```json
+{
+  "success": false,
+  "message": "Erro ao remover configuração de agenda",
+  "error": true
+}
+```
+
+---
+
+## 🔍 Tratamento no Frontend
+
+### Exemplo de Hook React para Schedules
+
+```javascript
+import { useState } from 'react';
+
+const useScheduleApi = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const getSchedule = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.get('/schedules');
+
+      if (response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message);
+      }
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        'Erro ao buscar configuração';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createSchedule = async scheduleData => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.post('/schedules', scheduleData);
+
+      if (response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message);
+      }
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        'Erro ao criar configuração';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateSchedule = async (id, scheduleData) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.patch(`/schedules/${id}`, scheduleData);
+
+      if (response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error(response.data.message);
+      }
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        'Erro ao atualizar configuração';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteSchedule = async id => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.delete(`/schedules/${id}`);
+
+      if (response.data.success) {
+        return true;
+      } else {
+        throw new Error(response.data.message);
+      }
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        'Erro ao remover configuração';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    getSchedule,
+    createSchedule,
+    updateSchedule,
+    deleteSchedule,
+    loading,
+    error,
+  };
+};
+```
+
+### Tratamento de Erros Específicos
+
+```javascript
+const handleScheduleError = error => {
+  const { response } = error;
+
+  if (response) {
+    const { status, data } = response;
+
+    switch (status) {
+      case 400:
+        if (data.message.includes('Já existe uma configuração')) {
+          showError('Uma configuração já existe. Use a opção de editar.');
+        } else if (data.message.includes('sobreposição')) {
+          showError(
+            'Os horários configurados se sobrepõem. Verifique os intervalos.'
+          );
+        } else if (data.message.includes('Dias da semana não encontrados')) {
+          showError('Alguns dias selecionados não existem no sistema.');
+        } else {
+          showError(data.message);
+        }
+        break;
+      case 404:
+        if (data.message.includes('Nenhuma configuração encontrada')) {
+          showInfo(
+            'Nenhuma configuração encontrada. Crie uma nova configuração.'
+          );
+        } else {
+          showError(data.message);
+        }
+        break;
+      case 500:
+        showError('Erro interno do servidor. Tente novamente.');
+        break;
+      default:
+        showError('Erro inesperado. Tente novamente.');
+    }
+  } else {
+    showError('Erro de conexão. Verifique sua internet.');
+  }
+};
+```
+
+### Validações de Entrada
+
+```javascript
+const validateScheduleData = data => {
+  const errors = [];
+
+  // Validar timeRanges
+  if (
+    !data.timeRanges ||
+    !Array.isArray(data.timeRanges) ||
+    data.timeRanges.length === 0
+  ) {
+    errors.push('Pelo menos um intervalo de horário deve ser configurado');
+  }
+
+  // Validar formato dos horários
+  data.timeRanges?.forEach((range, index) => {
+    if (!range.start || !range.end) {
+      errors.push(
+        `Intervalo ${index + 1}: horários de início e fim são obrigatórios`
+      );
+    }
+
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(range.start) || !timeRegex.test(range.end)) {
+      errors.push(
+        `Intervalo ${index + 1}: formato de horário inválido (use HH:MM)`
+      );
+    }
+
+    if (range.start >= range.end) {
+      errors.push(
+        `Intervalo ${index + 1}: horário de início deve ser menor que o fim`
+      );
+    }
+  });
+
+  // Validar dayIds
+  if (!data.dayIds || !Array.isArray(data.dayIds) || data.dayIds.length === 0) {
+    errors.push('Pelo menos um dia da semana deve ser selecionado');
+  }
+
+  return errors;
+};
+```
+
+Esta documentação fornece todas as possíveis respostas de cada endpoint do módulo `/schedules`, permitindo um tratamento completo no frontend.
+
+---
+
+## Padrões de Resposta Unificados
+
+### Estrutura Padrão de Resposta de Sucesso
+
+Todas as respostas de sucesso seguem o padrão:
+
+```json
+{
+  "success": true,
+  "message": "Mensagem descritiva da operação",
+  "data": {...} // Dados retornados (opcional)
+}
+```
+
+**Campos adicionais por contexto:**
+
+- `total`: Número total de itens (em listagens simples)
+- `pagination`: Objeto de paginação (em listagens paginadas)
+- `deletedId` ou `deletedIds`: ID(s) do(s) item(ns) deletado(s)
+- `count`: Número de itens afetados em operações em lote
+
+### Estrutura Padrão de Resposta de Erro
+
+Todas as respostas de erro seguem o padrão:
+
+```json
+{
+  "success": false,
+  "message": "Mensagem descritiva do erro",
+  "error": true,
+  "data": null // Opcional, apenas quando relevante
+}
+```
+
+### Códigos de Status HTTP
+
+- `200` - Operação realizada com sucesso
+- `201` - Recurso criado com sucesso
+- `400` - Erro de validação ou dados inválidos
+- `401` - Não autorizado (credenciais inválidas)
+- `403` - Acesso negado (sem permissão)
+- `404` - Recurso não encontrado
 - `500` - Erro interno do servidor
+
+### Exemplos de Respostas por Tipo de Operação
+
+#### CREATE (POST) - Sucesso (201)
+
+```json
+{
+  "success": true,
+  "message": "Recurso criado com sucesso",
+  "data": {
+    "id": 1,
+    "name": "Nome do recurso",
+    "createdAt": "2025-01-27T10:00:00.000Z"
+  }
+}
+```
+
+#### READ (GET) - Sucesso (200)
+
+```json
+{
+  "success": true,
+  "message": "Recursos listados com sucesso",
+  "data": [...],
+  "total": 10
+}
+```
+
+#### UPDATE (PATCH) - Sucesso (200)
+
+```json
+{
+  "success": true,
+  "message": "Recurso atualizado com sucesso",
+  "data": {
+    "id": 1,
+    "name": "Nome atualizado",
+    "updatedAt": "2025-01-27T10:00:00.000Z"
+  }
+}
+```
+
+#### DELETE - Sucesso (200)
+
+```json
+{
+  "success": true,
+  "message": "Recurso excluído com sucesso",
+  "deletedId": 1
+}
+```
+
+#### Erro de Validação (400)
+
+```json
+{
+  "success": false,
+  "message": "Campo obrigatório ausente: email",
+  "error": true
+}
+```
+
+#### Erro de Autorização (401)
+
+```json
+{
+  "success": false,
+  "message": "Credenciais inválidas",
+  "error": true
+}
+```
+
+#### Recurso Não Encontrado (404)
+
+```json
+{
+  "success": false,
+  "message": "Usuário não encontrado",
+  "data": null,
+  "error": true
+}
+```
+
+#### Erro Interno do Servidor (500)
+
+```json
+{
+  "success": false,
+  "message": "Erro interno do servidor",
+  "error": true
+}
+```
+
+---
+
+## Guia de Implementação Frontend
+
+### Tratamento Unificado de Respostas
+
+Para facilitar o tratamento no frontend, todas as respostas seguem padrões consistentes:
+
+#### Verificação de Sucesso
+
+```javascript
+// Verificar se a operação foi bem-sucedida
+if (response.data.success) {
+  // Operação realizada com sucesso
+  console.log(response.data.message);
+  const data = response.data.data; // Dados retornados
+} else {
+  // Erro ocorreu
+  console.error(response.data.message);
+  // Exibir mensagem de erro para o usuário
+}
+```
+
+#### Tratamento de Erros por Status HTTP
+
+```javascript
+try {
+  const response = await api.post('/users', userData);
+  if (response.data.success) {
+    // Sucesso - processar response.data.data
+  }
+} catch (error) {
+  if (error.response) {
+    const { status, data } = error.response;
+
+    switch (status) {
+      case 400:
+        // Erro de validação - mostrar data.message
+        showValidationError(data.message);
+        break;
+      case 401:
+        // Não autorizado - redirecionar para login
+        redirectToLogin();
+        break;
+      case 403:
+        // Sem permissão - mostrar mensagem de acesso negado
+        showAccessDenied();
+        break;
+      case 404:
+        // Não encontrado - mostrar data.message
+        showNotFound(data.message);
+        break;
+      case 500:
+        // Erro do servidor - mostrar mensagem genérica
+        showServerError();
+        break;
+      default:
+        showGenericError();
+    }
+  } else {
+    // Erro de rede
+    showNetworkError();
+  }
+}
+```
+
+#### Exemplo de Hook React para API
+
+```javascript
+import { useState } from 'react';
+
+const useApiCall = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const callApi = async apiFunction => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await apiFunction();
+
+      if (response.data.success) {
+        return response.data;
+      } else {
+        throw new Error(response.data.message);
+      }
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.message || err.message || 'Erro inesperado';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { callApi, loading, error };
+};
+```
+
+### Mensagens de Erro Comuns
+
+**Validação de Dados:**
+
+- "Campo obrigatório ausente: [campo]"
+- "E-mail inválido"
+- "CPF deve estar no formato XXX.XXX.XXX-XX"
+- "ID inválido"
+
+**Autorização:**
+
+- "Credenciais inválidas ou não aprovadas"
+- "Acesso negado"
+
+**Recursos:**
+
+- "[Recurso] não encontrado"
+- "[Recurso] criado com sucesso"
+- "[Recurso] atualizado com sucesso"
+- "[Recurso] excluído com sucesso"
+
+**Agendamentos:**
+
+- "Você já possui um agendamento ativo"
+- "Cancelamento deve ser feito com pelo menos 3 horas de antecedência"
+- "Horário não está disponível"
 
 ## Estrutura de Paginação
 
@@ -970,6 +1933,7 @@ Todos os usuários devem preencher os seguintes campos obrigatórios:
 ## Funcionalidade de Busca
 
 A busca de usuários funciona em todos os campos:
+
 - Username, nome completo, CPF, email
 - Função, cargo, matrícula, setor
 - Telefone e dados pessoais

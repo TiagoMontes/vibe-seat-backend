@@ -38,9 +38,11 @@ O sistema utiliza **MySQL** como banco de dados principal, gerenciado através d
 ## 🔧 Configuração do Banco
 
 ### Conexão
+
 - Conexão feita pelo docker-compose.yml
 
 ### Provider
+
 - **Banco**: MySQL
 - **ORM**: Prisma
 - **Ambiente**: Docker (recomendado)
@@ -50,6 +52,7 @@ O sistema utiliza **MySQL** como banco de dados principal, gerenciado através d
 ## 📋 Entidades Principais
 
 ### 1. **Role** - Perfis de Acesso
+
 ```sql
 CREATE TABLE Role (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -65,6 +68,7 @@ CREATE TABLE Role (
 **Hierarquia**: `user < attendant < admin`
 
 ### 2. **User** - Usuários do Sistema
+
 ```sql
 CREATE TABLE User (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -95,6 +99,7 @@ CREATE TABLE User (
 **Validações**: CPF, email, username e matrícula únicos
 
 ### 3. **UserApproval** - Workflow de Aprovação
+
 ```sql
 CREATE TABLE UserApproval (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -112,12 +117,14 @@ CREATE TABLE UserApproval (
 ```
 
 **Propósito**: Controla aprovação hierárquica de usuários
-**Regras**: 
+**Regras**:
+
 - Atendentes aprovam usuários
 - Administradores aprovam atendentes
 - Administradores podem aprovar qualquer role
 
 ### 4. **Chair** - Cadeiras de Massagem
+
 ```sql
 CREATE TABLE Chair (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -132,12 +139,14 @@ CREATE TABLE Chair (
 ```
 
 **Propósito**: Gerencia cadeiras de massagem
-**Status**: 
+**Status**:
+
 - `ACTIVE`: Disponível para agendamento
 - `MAINTENANCE`: Em manutenção
 - `INACTIVE`: Inativa/desabilitada
 
 ### 5. **ScheduleConfig** - Configuração Global (Singleton)
+
 ```sql
 CREATE TABLE ScheduleConfig (
     id INT PRIMARY KEY DEFAULT 1,
@@ -152,15 +161,17 @@ CREATE TABLE ScheduleConfig (
 
 **Propósito**: Configuração global de horários de funcionamento
 **Estrutura JSON**:
+
 ```json
 [
-  {"start": "08:00", "end": "10:00"},
-  {"start": "14:00", "end": "16:00"},
-  {"start": "18:00", "end": "20:00"}
+  { "start": "08:00", "end": "10:00" },
+  { "start": "14:00", "end": "16:00" },
+  { "start": "18:00", "end": "20:00" }
 ]
 ```
 
 ### 6. **DayOfWeek** - Dias da Semana Disponíveis
+
 ```sql
 CREATE TABLE DayOfWeek (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -177,6 +188,7 @@ CREATE TABLE DayOfWeek (
 **Valores**: `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday`, `sunday`
 
 ### 7. **Appointment** - Agendamentos
+
 ```sql
 CREATE TABLE Appointment (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -196,6 +208,7 @@ CREATE TABLE Appointment (
 
 **Propósito**: Gerencia agendamentos de sessões
 **Status**:
+
 - `SCHEDULED`: Agendado
 - `CANCELLED`: Cancelado
 - `CONFIRMED`: Presença confirmada
@@ -205,26 +218,31 @@ CREATE TABLE Appointment (
 ## 🔗 Relacionamentos Detalhados
 
 ### **1:N - Role → User**
+
 - Um role pode ter múltiplos usuários
 - Cada usuário pertence a exatamente um role
 - Chave estrangeira: `User.roleId → Role.id`
 
 ### **1:N - User → Appointment**
+
 - Um usuário pode ter múltiplos agendamentos
 - Cada agendamento pertence a um usuário
 - Chave estrangeira: `Appointment.userId → User.id`
 
 ### **1:N - Chair → Appointment**
+
 - Uma cadeira pode ter múltiplos agendamentos
 - Cada agendamento usa uma cadeira
 - Chave estrangeira: `Appointment.chairId → Chair.id`
 
 ### **1:N - ScheduleConfig → DayOfWeek**
+
 - Uma configuração pode ter múltiplos dias
 - Cada dia pode pertencer a uma configuração (nullable)
 - Chave estrangeira: `DayOfWeek.scheduleConfigId → ScheduleConfig.id`
 
 ### **Relacionamentos Complexos - UserApproval**
+
 - **User (Solicitante)**: `UserApproval.userId → User.id`
 - **Role (Solicitado)**: `UserApproval.requestedRoleId → Role.id`
 - **User (Aprovador)**: `UserApproval.approvedById → User.id`
@@ -234,18 +252,22 @@ CREATE TABLE Appointment (
 ## 🛡️ Recursos de Segurança
 
 ### **Soft Delete**
+
 Todas as entidades implementam soft delete:
+
 ```typescript
 deletedAt: DateTime? // null = ativo, data = deletado
 ```
 
 ### **Timestamps Automáticos**
+
 ```typescript
 createdAt: DateTime @default(now())
 updatedAt: DateTime @updatedAt
 ```
 
 ### **Validações de Unicidade**
+
 - `User.username`, `User.cpf`, `User.email`, `User.registration`
 - `Role.name`, `Chair.name`
 
@@ -254,6 +276,7 @@ updatedAt: DateTime @updatedAt
 ## 📊 Índices e Performance
 
 ### **Índices Principais**
+
 ```sql
 -- Índices de chave primária (automáticos)
 PRIMARY KEY (id) em todas as tabelas
@@ -277,6 +300,7 @@ INDEX idx_dayofweek_scheduleConfigId ON DayOfWeek(scheduleConfigId)
 ```
 
 ### **Índices para Soft Delete**
+
 ```sql
 -- Filtros por registros ativos
 INDEX idx_user_deletedAt ON User(deletedAt)
@@ -293,15 +317,17 @@ INDEX idx_dayofweek_deletedAt ON DayOfWeek(deletedAt)
 ## 🚀 Operações Comuns
 
 ### **Buscar Usuários Ativos**
+
 ```sql
-SELECT * FROM User 
-WHERE deletedAt IS NULL 
+SELECT * FROM User
+WHERE deletedAt IS NULL
 AND status = 'approved';
 ```
 
 ### **Agendamentos de Hoje**
+
 ```sql
-SELECT a.*, u.fullName, c.name as chairName 
+SELECT a.*, u.fullName, c.name as chairName
 FROM Appointment a
 JOIN User u ON a.userId = u.id
 JOIN Chair c ON a.chairId = c.id
@@ -310,6 +336,7 @@ AND a.deletedAt IS NULL;
 ```
 
 ### **Aprovações Pendentes**
+
 ```sql
 SELECT ua.*, u.fullName, r.name as requestedRole
 FROM UserApproval ua
@@ -320,11 +347,12 @@ AND ua.deletedAt IS NULL;
 ```
 
 ### **Horários Disponíveis**
+
 ```sql
 -- Slots ocupados para uma data
-SELECT datetimeStart, datetimeEnd 
-FROM Appointment 
-WHERE chairId = ? 
+SELECT datetimeStart, datetimeEnd
+FROM Appointment
+WHERE chairId = ?
 AND DATE(datetimeStart) = ?
 AND status IN ('SCHEDULED', 'CONFIRMED')
 AND deletedAt IS NULL;
@@ -335,6 +363,7 @@ AND deletedAt IS NULL;
 ## 📝 Migrations e Versionamento
 
 ### **Comandos Principais**
+
 ```bash
 # Gerar nova migration
 bunx prisma migrate dev --name nome-da-migration
@@ -350,6 +379,7 @@ bunx prisma generate
 ```
 
 ### **Estrutura de Migrations**
+
 ```
 prisma/migrations/
 ├── 20250120_init/
@@ -363,21 +393,23 @@ prisma/migrations/
 ## 🔍 Monitoramento e Manutenção
 
 ### **Queries de Monitoramento**
+
 ```sql
 -- Estatísticas gerais
-SELECT 
+SELECT
   (SELECT COUNT(*) FROM User WHERE deletedAt IS NULL) as active_users,
   (SELECT COUNT(*) FROM Chair WHERE deletedAt IS NULL AND status = 'ACTIVE') as active_chairs,
   (SELECT COUNT(*) FROM Appointment WHERE deletedAt IS NULL AND status = 'SCHEDULED') as scheduled_appointments,
   (SELECT COUNT(*) FROM UserApproval WHERE deletedAt IS NULL AND status = 'pending') as pending_approvals;
 
 -- Limpeza de registros antigos (soft deleted há mais de 1 ano)
-SELECT COUNT(*) FROM User 
-WHERE deletedAt IS NOT NULL 
+SELECT COUNT(*) FROM User
+WHERE deletedAt IS NOT NULL
 AND deletedAt < DATE_SUB(NOW(), INTERVAL 1 YEAR);
 ```
 
 ### **Backup e Restore**
+
 ```bash
 # Backup
 mysqldump -u root -p sejusp-db > backup_$(date +%Y%m%d_%H%M%S).sql
@@ -391,12 +423,14 @@ mysql -u root -p sejusp-db < backup_file.sql
 ## 📈 Escalabilidade e Performance
 
 ### **Otimizações Implementadas**
+
 1. **Connection Pooling**: `connection_limit=50`
 2. **Soft Delete**: Mantém integridade referencial
 3. **Índices Estratégicos**: Em campos de busca frequente
 4. **Singleton Pattern**: ScheduleConfig com ID fixo = 1
 
 ### **Recomendações Futuras**
+
 1. **Particionamento**: Tabela de Appointments por data
 2. **Arquivamento**: Agendamentos antigos
 3. **Cache**: Redis para configurações frequentes

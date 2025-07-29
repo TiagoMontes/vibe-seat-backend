@@ -138,7 +138,9 @@ export const userService = {
     if (cpf !== undefined) {
       const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{11}$/;
       if (!cpfRegex.test(cpf)) {
-        throw new Error('CPF deve estar no formato XXX.XXX.XXX-XX ou apenas números');
+        throw new Error(
+          'CPF deve estar no formato XXX.XXX.XXX-XX ou apenas números'
+        );
       }
     }
 

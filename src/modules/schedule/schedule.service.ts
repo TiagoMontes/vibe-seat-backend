@@ -42,7 +42,10 @@ export const scheduleService = {
   },
 
   // Atualiza apenas os dias da semana vinculados
-  updateDays: async (dayIds: number[], id?: string): Promise<ScheduleConfig> => {
+  updateDays: async (
+    dayIds: number[],
+    id?: string
+  ): Promise<ScheduleConfig> => {
     // Valida se o ID é 1 (singleton)
     if (id && id !== '1') {
       throw new Error(

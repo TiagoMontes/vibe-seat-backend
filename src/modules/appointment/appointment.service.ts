@@ -1,5 +1,6 @@
 import { appointmentRepository } from './appointment.repository';
 import { prisma } from '@/lib/prisma';
+import { emailService } from '@/modules/email/email.service';
 import type {
   AppointmentInput,
   AppointmentFilters,
@@ -7,6 +8,7 @@ import type {
   PaginationMeta,
   AppointmentQueryParams,
 } from './types';
+import type { AppointmentEmailData } from '@/modules/email/types';
 
 const APPOINTMENT_DURATION_MINUTES = 30;
 const CANCELLATION_NOTICE_HOURS = 3;
@@ -84,24 +86,31 @@ export const appointmentService = {
       start.getTime() + APPOINTMENT_DURATION_MINUTES * 60000
     );
 
-    // 1.0) Verificar se o usuário já tem appointment ativo (SCHEDULED ou CONFIRMED)
+    // 1.0) Verificar se o usuário já tem appointment ativo
+    // Usuário só pode ter 1 agendamento ativo por vez (não cancelado e futuro)
     const now = new Date();
     const activeAppointments = await prisma.appointment.findMany({
       where: {
         userId,
         status: {
-          in: ['SCHEDULED', 'CONFIRMED'],
+          not: 'CANCELLED', // Qualquer status exceto CANCELLED
         },
-        // Considerar apenas appointments futuros ou atuais
+        // Considerar apenas appointments futuros
         datetimeStart: {
-          gte: now,
+          gt: now, // Maior que agora (estritamente futuro)
         },
       },
     });
 
     if (activeAppointments.length > 0) {
+      const activeAppointment = activeAppointments[0];
+      const statusMessage = {
+        'SCHEDULED': 'agendado',
+        'CONFIRMED': 'confirmado'
+      }[activeAppointment.status] || 'ativo';
+      
       throw new Error(
-        'Você já possui um agendamento ativo. Cancele ou aguarde a conclusão do agendamento atual para criar um novo.'
+        `Você já possui um agendamento ${statusMessage} para ${activeAppointment.datetimeStart.toLocaleString('pt-BR')}. Cancele ou aguarde a conclusão deste agendamento para criar um novo.`
       );
     }
 
@@ -171,12 +180,70 @@ export const appointmentService = {
       throw new Error('Horário fora da disponibilidade configurada.');
     }
 
-    return appointmentRepository.create({
+    // Criar o agendamento
+    const createdAppointment = await appointmentRepository.create({
       userId,
       chairId: input.chairId,
       datetimeStart: start,
       datetimeEnd: end,
     });
+
+    // Buscar dados completos do agendamento para enviar email
+    const appointmentWithDetails = await prisma.appointment.findUnique({
+      where: { id: createdAppointment.id },
+      include: {
+        user: {
+          select: {
+            fullName: true,
+            email: true,
+          },
+        },
+        chair: {
+          select: {
+            name: true,
+            location: true,
+          },
+        },
+      },
+    });
+
+    // Enviar email de agendamento criado se usuário tem email
+    if (
+      appointmentWithDetails?.user.email &&
+      appointmentWithDetails?.user.fullName
+    ) {
+      try {
+        const emailData: AppointmentEmailData = {
+          appointmentId: appointmentWithDetails.id,
+          userName: appointmentWithDetails.user.fullName,
+          userEmail: appointmentWithDetails.user.email,
+          chairName: appointmentWithDetails.chair.name,
+          chairLocation: appointmentWithDetails.chair.location || undefined,
+          datetimeStart: appointmentWithDetails.datetimeStart,
+          datetimeEnd: appointmentWithDetails.datetimeEnd,
+        };
+
+        const emailResult = await emailService.sendCreatedEmail(emailData);
+
+        if (emailResult.success) {
+          console.log(
+            `✅ Created email sent for appointment ${createdAppointment.id} to ${appointmentWithDetails.user.email}`
+          );
+        } else {
+          console.error(
+            `❌ Failed to send created email for appointment ${createdAppointment.id}: ${emailResult.error}`
+          );
+        }
+      } catch (error) {
+        console.error(
+          `❌ Error sending created email for appointment ${createdAppointment.id}:`,
+          error
+        );
+        // Não falhar a criação se o email falhar
+      }
+    }
+
+    return createdAppointment;
   },
 
   // 2) Listar agendamentos (admin vê todos, usuário apenas os seus)
@@ -628,11 +695,65 @@ export const appointmentService = {
 
   // 5) Confirmar presença (somente admin/atendente)
   confirm: async (id: number) => {
-    const appt = await prisma.appointment.findUnique({ where: { id } });
+    const appt = await prisma.appointment.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            fullName: true,
+            email: true,
+          },
+        },
+        chair: {
+          select: {
+            name: true,
+            location: true,
+          },
+        },
+      },
+    });
+
     if (!appt) throw new Error('Agendamento não encontrado.');
-    return appointmentRepository.update(id, {
+
+    // Atualizar status do appointment
+    const updatedAppointment = await appointmentRepository.update(id, {
       status: 'CONFIRMED',
       presenceConfirmed: true,
     });
+
+    // Enviar email de confirmação se usuário tem email
+    if (appt.user.email && appt.user.fullName) {
+      try {
+        const emailData: AppointmentEmailData = {
+          appointmentId: appt.id,
+          userName: appt.user.fullName,
+          userEmail: appt.user.email,
+          chairName: appt.chair.name,
+          chairLocation: appt.chair.location || undefined,
+          datetimeStart: appt.datetimeStart,
+          datetimeEnd: appt.datetimeEnd,
+        };
+
+        const emailResult = await emailService.sendConfirmationEmail(emailData);
+
+        if (emailResult.success) {
+          console.log(
+            `✅ Confirmation email sent for appointment ${id} to ${appt.user.email}`
+          );
+        } else {
+          console.error(
+            `❌ Failed to send confirmation email for appointment ${id}: ${emailResult.error}`
+          );
+        }
+      } catch (error) {
+        console.error(
+          `❌ Error sending confirmation email for appointment ${id}:`,
+          error
+        );
+        // Não falhar a confirmação se o email falhar
+      }
+    }
+
+    return updatedAppointment;
   },
 };
