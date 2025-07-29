@@ -1,6 +1,7 @@
 import { appointmentRepository } from './appointment.repository';
 import { prisma } from '@/lib/prisma';
 import { emailService } from '@/modules/email/email.service';
+import { toZonedTime, format } from 'date-fns-tz';
 import type {
   AppointmentInput,
   AppointmentFilters,
@@ -12,6 +13,7 @@ import type { AppointmentEmailData } from '@/modules/email/types';
 
 const APPOINTMENT_DURATION_MINUTES = 30;
 const CANCELLATION_NOTICE_HOURS = 3;
+const TIMEZONE = 'America/Rio_Branco';
 
 const validateAndParseQueryParams = (
   query: AppointmentQueryParams
@@ -106,11 +108,12 @@ export const appointmentService = {
       const activeAppointment = activeAppointments[0];
       const statusMessage = {
         'SCHEDULED': 'agendado',
-        'CONFIRMED': 'confirmado'
-      }[activeAppointment.status] || 'ativo';
+        'CONFIRMED': 'confirmado',
+        'CANCELLED': 'cancelado'
+      }[activeAppointment?.status || 'SCHEDULED'] || 'ativo';
       
       throw new Error(
-        `Você já possui um agendamento ${statusMessage} para ${activeAppointment.datetimeStart.toLocaleString('pt-BR')}. Cancele ou aguarde a conclusão deste agendamento para criar um novo.`
+        `Você já possui um agendamento ${statusMessage} para ${activeAppointment?.datetimeStart.toLocaleString('pt-BR')}. Cancele ou aguarde a conclusão deste agendamento para criar um novo.`
       );
     }
 
@@ -166,7 +169,7 @@ export const appointmentService = {
     }
 
     // Verificar se o horário está dentro dos timeRanges configurados
-    const timeString = start.toTimeString().slice(0, 5); // "HH:MM"
+    const timeString = format(start, 'HH:mm'); // "HH:MM" no fuso local
     const timeRanges = scheduleConfig.timeRanges as Array<{
       start: string;
       end: string;
@@ -558,21 +561,50 @@ export const appointmentService = {
     const bookedTimes = await appointmentRepository.findBookedTimes(date);
 
     // 6. Gerar todos os horários possíveis baseados nas configurações
-    const allPossibleTimes: string[] = [];
+    const now = toZonedTime(new Date(), TIMEZONE);
+    const targetDateZoned = toZonedTime(new Date(date), TIMEZONE);
+    const isToday = targetDateZoned.toDateString() === now.toDateString();
+    
+    const allPossibleSlots: string[] = [];
+    const allPossibleTimesISO: string[] = []; // Para compatibilidade com bookings
     const timeRanges = scheduleConfig.timeRanges as Array<{
       start: string;
       end: string;
     }>;
 
     for (const range of timeRanges) {
-      const startTime = new Date(date + 'T' + range.start);
-      const endTime = new Date(date + 'T' + range.end);
+      // Criar horários considerando o fuso horário local
+      // Usar toZonedTime para garantir que os horários sejam interpretados no fuso correto
+      const startTime = toZonedTime(new Date(`${date}T${range.start}:00`), TIMEZONE);
+      const endTime = toZonedTime(new Date(`${date}T${range.end}:00`), TIMEZONE);
 
       // Gerar slots de 30 minutos
       let currentTime = new Date(startTime);
       while (currentTime < endTime) {
-        const timeString = currentTime.toISOString();
-        allPossibleTimes.push(timeString);
+        const timeSlot = format(currentTime, 'HH:mm'); // "HH:MM" no fuso local
+        const timeISO = currentTime.toISOString();
+        
+        // Se for hoje, só incluir horários futuros
+        if (!isToday) {
+          allPossibleSlots.push(timeSlot);
+          allPossibleTimesISO.push(timeISO);
+        } else {
+          // Se for hoje, comparar apenas o horário atual
+          const currentHour = now.getHours();
+          const currentMinute = now.getMinutes();
+          const timeParts = timeSlot.split(':');
+          const slotHour = parseInt(timeParts[0] || '0');
+          const slotMinute = parseInt(timeParts[1] || '0');
+          
+          // Converter para minutos para facilitar comparação
+          const currentTimeInMinutes = currentHour * 60 + currentMinute;
+          const slotTimeInMinutes = slotHour * 60 + slotMinute;
+          
+          if (slotTimeInMinutes > currentTimeInMinutes) {
+            allPossibleSlots.push(timeSlot);
+            allPossibleTimesISO.push(timeISO);
+          }
+        }
 
         // Avançar 30 minutos
         currentTime.setMinutes(
@@ -583,45 +615,52 @@ export const appointmentService = {
 
     // 7. Organizar horários ocupados por cadeira
     const bookedTimesByChair: { [chairId: number]: string[] } = {};
+    const bookedSlotsByChair: { [chairId: number]: string[] } = {};
 
     bookedTimes.forEach(booking => {
       const chairId = booking.chairId;
-      const timeString = booking.datetimeStart.toISOString();
+      const timeISO = booking.datetimeStart.toISOString();
+      const timeSlot = format(booking.datetimeStart, 'HH:mm'); // "HH:MM" no fuso local
 
       if (!bookedTimesByChair[chairId]) {
         bookedTimesByChair[chairId] = [];
+        bookedSlotsByChair[chairId] = [];
       }
-      bookedTimesByChair[chairId].push(timeString);
+      bookedTimesByChair[chairId]?.push(timeISO);
+      bookedSlotsByChair[chairId]?.push(timeSlot);
     });
 
     // 8. Calcular disponibilidade para cada cadeira da página atual
     const chairsAvailability = allChairs.map(chair => {
       const bookedTimesForChair = bookedTimesByChair[chair.id] || [];
+      const bookedSlotsForChair = bookedSlotsByChair[chair.id] || [];
 
-      const available = allPossibleTimes.filter(
-        time => !bookedTimesForChair.includes(time)
+      // Filtrar slots disponíveis (formato HH:MM)
+      const availableSlots = allPossibleSlots.filter(
+        slot => !bookedSlotsForChair.includes(slot)
       );
 
-      const unavailable = allPossibleTimes.filter(time =>
-        bookedTimesForChair.includes(time)
+      // Slots indisponíveis (formato HH:MM)  
+      const unavailableSlots = allPossibleSlots.filter(slot =>
+        bookedSlotsForChair.includes(slot)
       );
 
       return {
         chairId: chair.id,
         chairName: chair.name,
         chairLocation: chair.location,
-        available,
-        unavailable,
-        totalSlots: allPossibleTimes.length,
-        bookedSlots: bookedTimesForChair.length,
-        availableSlots: available.length,
+        available: availableSlots,
+        unavailable: unavailableSlots,
+        totalSlots: allPossibleSlots.length,
+        bookedSlots: bookedSlotsForChair.length,
+        availableSlots: availableSlots.length,
       };
     });
 
     // 9. Calcular estatísticas totais
     const totalBookedSlots = bookedTimes.length;
     const totalAvailableSlots =
-      allPossibleTimes.length * allChairs.length - totalBookedSlots;
+      allPossibleSlots.length * allChairs.length - totalBookedSlots;
 
     // Calcular paginação baseado no contexto (chairIds específicos ou paginação normal)
     let pagination;
@@ -664,7 +703,7 @@ export const appointmentService = {
     return {
       chairs: chairsAvailability,
       pagination,
-      totalSlots: allPossibleTimes.length,
+      totalSlots: allPossibleSlots.length,
       bookedSlots: totalBookedSlots,
       availableSlots: totalAvailableSlots,
     };
