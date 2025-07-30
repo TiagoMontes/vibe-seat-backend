@@ -18,8 +18,6 @@ export const auditService = {
         ? auditService.extractChanges(params.oldValues, params.newValues)
         : undefined;
 
-      console.log(`🔍 [AUDIT] Creating log: ${params.action} on ${params.tableName}:${params.recordId} by user ${params.userId}`);
-
       await prisma.auditLog.create({
         data: {
           tableName: params.tableName,
@@ -32,8 +30,6 @@ export const auditService = {
           metadata: params.metadata,
         },
       });
-
-      console.log(`✅ [AUDIT] Log created successfully for ${params.action} on ${params.tableName}:${params.recordId}`);
     } catch (error) {
       console.error(`❌ [AUDIT] Error creating log for ${params.action} on ${params.tableName}:${params.recordId}:`, error);
       // Não falhar a operação principal se a auditoria falhar
