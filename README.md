@@ -64,8 +64,9 @@ environment:
 - `DEFAULT_FROM_EMAIL` - Email remetente padrão (opcional)
 
 **Sem essas configurações**, o sistema funcionará normalmente, mas **não enviará emails automáticos** de:
+
 - Criação de agendamento
-- Confirmação de presença  
+- Confirmação de presença
 - Lembretes de agendamento
 
 **⚠️ Importante**: Não crie um arquivo `.env` local, pois isso pode causar conflitos com as configurações do Docker.
@@ -246,12 +247,13 @@ src/modules/
 
 O módulo de email (`src/modules/email/`) implementa:
 
-- **email.service.ts** - Serviço principal usando Mailtrap REST API  
+- **email.service.ts** - Serviço principal usando Mailtrap REST API
 - **email.templates.ts** - Templates HTML responsivos para emails
 - **email.scheduler.ts** - Agendador para envio de lembretes
 - **types.ts** - Tipos TypeScript para dados de email
 
 **Funcionalidades:**
+
 - ✅ Email de criação de agendamento
 - ✅ Email de confirmação de presença
 - ✅ Email de lembrete (1h antes do agendamento)

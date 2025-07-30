@@ -7,7 +7,8 @@ import type {
 } from './types';
 import { emailTemplates } from './email.templates';
 
-const token = process.env.MAILTRAP_API_TOKEN || '6ab07fc7035c315cf6967814daeab66f';
+const token =
+  process.env.MAILTRAP_API_TOKEN || '6ab07fc7035c315cf6967814daeab66f';
 const testInboxId = Number(process.env.MAILTRAP_INBOX_ID) || 3928333;
 
 if (!token || !testInboxId) {
@@ -29,13 +30,16 @@ export const emailService = {
 
       const payload = {
         from: {
-          email: emailData.from || process.env.DEFAULT_FROM_EMAIL || 'noreply@sejusp.gov.br',
+          email:
+            emailData.from ||
+            process.env.DEFAULT_FROM_EMAIL ||
+            'noreply@sejusp.gov.br',
           name: 'SEJUSP - Vibe Seat',
         },
         to: [
           {
             email: emailData.to,
-          }
+          },
         ],
         subject: emailData.subject,
         text: emailData.text || 'Email enviado pelo sistema SEJUSP - Vibe Seat',
@@ -47,7 +51,7 @@ export const emailService = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          Accept: 'application/json',
           'Api-Token': token,
         },
         body: JSON.stringify(payload),

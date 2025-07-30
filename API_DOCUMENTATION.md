@@ -523,6 +523,7 @@ O sistema envia emails automáticos para os usuários em três momentos:
 - Instruções relevantes
 
 **Estados dos emails:**
+
 - `PENDING`: Email criado, aguardando envio
 - `SENT`: Email enviado com sucesso
 - `FAILED`: Falha no envio do email

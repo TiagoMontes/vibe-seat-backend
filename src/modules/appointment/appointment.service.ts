@@ -1,6 +1,7 @@
 import { appointmentRepository } from './appointment.repository';
 import { prisma } from '@/lib/prisma';
 import { emailService } from '@/modules/email/email.service';
+import { toZonedTime, format } from 'date-fns-tz';
 import type {
   AppointmentInput,
   AppointmentFilters,
@@ -12,6 +13,7 @@ import type { AppointmentEmailData } from '@/modules/email/types';
 
 const APPOINTMENT_DURATION_MINUTES = 30;
 const CANCELLATION_NOTICE_HOURS = 3;
+const TIMEZONE = 'America/Rio_Branco';
 
 const validateAndParseQueryParams = (
   query: AppointmentQueryParams
@@ -88,7 +90,7 @@ export const appointmentService = {
 
     // 1.0) Verificar se o usuário já tem appointment ativo
     // Usuário só pode ter 1 agendamento ativo por vez (não cancelado e futuro)
-    const now = new Date();
+    const now = toZonedTime(new Date(), TIMEZONE);
     const activeAppointments = await prisma.appointment.findMany({
       where: {
         userId,
@@ -104,11 +106,17 @@ export const appointmentService = {
 
     if (activeAppointments.length > 0) {
       const activeAppointment = activeAppointments[0];
-      const statusMessage = {
-        'SCHEDULED': 'agendado',
-        'CONFIRMED': 'confirmado'
-      }[activeAppointment.status] || 'ativo';
-      
+      if (!activeAppointment) {
+        throw new Error('Erro interno: agendamento ativo não encontrado.');
+      }
+
+      const statusMessage =
+        {
+          SCHEDULED: 'agendado',
+          CONFIRMED: 'confirmado',
+          CANCELLED: 'cancelado',
+        }[activeAppointment.status] || 'ativo';
+
       throw new Error(
         `Você já possui um agendamento ${statusMessage} para ${activeAppointment.datetimeStart.toLocaleString('pt-BR')}. Cancele ou aguarde a conclusão deste agendamento para criar um novo.`
       );
@@ -166,7 +174,7 @@ export const appointmentService = {
     }
 
     // Verificar se o horário está dentro dos timeRanges configurados
-    const timeString = start.toTimeString().slice(0, 5); // "HH:MM"
+    const timeString = format(toZonedTime(start, TIMEZONE), 'HH:mm'); // "HH:MM" no fuso local
     const timeRanges = scheduleConfig.timeRanges as Array<{
       start: string;
       end: string;
@@ -303,7 +311,7 @@ export const appointmentService = {
     };
 
     // Calculate additional status-based counts for confirmed appointments
-    const now = new Date();
+    const now = toZonedTime(new Date(), TIMEZONE);
     const confirmedAppointments = appointments.filter(
       apt => apt.status === 'CONFIRMED'
     );
@@ -458,7 +466,7 @@ export const appointmentService = {
     ]);
 
     // 3. Verificar se o dia da semana está configurado
-    const targetDate = new Date(date);
+    const targetDate = toZonedTime(new Date(date), TIMEZONE);
     const dayNames = [
       'Domingo',
       'Segunda-feira',
@@ -558,9 +566,13 @@ export const appointmentService = {
     const bookedTimes = await appointmentRepository.findBookedTimes(date);
 
     // 6. Gerar todos os horários possíveis baseados nas configurações
-    const now = new Date();
-    const isToday = targetDate.toDateString() === now.toDateString();
-    
+    // Usar timezone do Acre para obter a data/hora atual local
+    const now = toZonedTime(new Date(), TIMEZONE);
+
+    // Criar data de hoje no formato YYYY-MM-DD no timezone local
+    const todayString = format(now, 'yyyy-MM-dd');
+    const isToday = date === todayString;
+
     const allPossibleSlots: string[] = [];
     const allPossibleTimesISO: string[] = []; // Para compatibilidade com bookings
     const timeRanges = scheduleConfig.timeRanges as Array<{
@@ -569,32 +581,38 @@ export const appointmentService = {
     }>;
 
     for (const range of timeRanges) {
-      // Criar horários considerando o fuso horário local
-      const startTime = new Date(date + 'T' + range.start + ':00');
-      const endTime = new Date(date + 'T' + range.end + ':00');
+      // Criar horários diretamente no timezone local sem conversão UTC
+      const [startHour, startMinute] = range.start.split(':').map(Number);
+      const [endHour, endMinute] = range.end.split(':').map(Number);
+
+      // Criar data local diretamente
+      const startTime = new Date(targetDate);
+      startTime.setHours(startHour || 0, startMinute || 0, 0, 0);
+
+      const endTime = new Date(targetDate);
+      endTime.setHours(endHour || 0, endMinute || 0, 0, 0);
 
       // Gerar slots de 30 minutos
       let currentTime = new Date(startTime);
       while (currentTime < endTime) {
-        const timeSlot = currentTime.toTimeString().slice(0, 5); // "HH:MM"
+        const timeSlot = `${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes().toString().padStart(2, '0')}`;
         const timeISO = currentTime.toISOString();
-        
+
         // Se for hoje, só incluir horários futuros
-        // Comparar apenas o horário (HH:MM) em vez de objetos Date completos
         if (!isToday) {
           allPossibleSlots.push(timeSlot);
           allPossibleTimesISO.push(timeISO);
         } else {
-          // Se for hoje, comparar apenas o horário atual
+          // Se for hoje, comparar apenas o horário atual (usando now já no timezone correto)
           const currentHour = now.getHours();
           const currentMinute = now.getMinutes();
-          const slotHour = parseInt(timeSlot.split(':')[0]);
-          const slotMinute = parseInt(timeSlot.split(':')[1]);
-          
+          const slotHour = currentTime.getHours();
+          const slotMinute = currentTime.getMinutes();
+
           // Converter para minutos para facilitar comparação
           const currentTimeInMinutes = currentHour * 60 + currentMinute;
           const slotTimeInMinutes = slotHour * 60 + slotMinute;
-          
+
           if (slotTimeInMinutes > currentTimeInMinutes) {
             allPossibleSlots.push(timeSlot);
             allPossibleTimesISO.push(timeISO);
@@ -615,19 +633,21 @@ export const appointmentService = {
     bookedTimes.forEach(booking => {
       const chairId = booking.chairId;
       const timeISO = booking.datetimeStart.toISOString();
-      const timeSlot = booking.datetimeStart.toTimeString().slice(0, 5); // "HH:MM"
+      const timeSlot = format(
+        toZonedTime(booking.datetimeStart, TIMEZONE),
+        'HH:mm'
+      ); // "HH:MM" no fuso local
 
       if (!bookedTimesByChair[chairId]) {
         bookedTimesByChair[chairId] = [];
         bookedSlotsByChair[chairId] = [];
       }
-      bookedTimesByChair[chairId].push(timeISO);
-      bookedSlotsByChair[chairId].push(timeSlot);
+      bookedTimesByChair[chairId]?.push(timeISO);
+      bookedSlotsByChair[chairId]?.push(timeSlot);
     });
 
     // 8. Calcular disponibilidade para cada cadeira da página atual
     const chairsAvailability = allChairs.map(chair => {
-      const bookedTimesForChair = bookedTimesByChair[chair.id] || [];
       const bookedSlotsForChair = bookedSlotsByChair[chair.id] || [];
 
       // Filtrar slots disponíveis (formato HH:MM)
@@ -635,7 +655,7 @@ export const appointmentService = {
         slot => !bookedSlotsForChair.includes(slot)
       );
 
-      // Slots indisponíveis (formato HH:MM)  
+      // Slots indisponíveis (formato HH:MM)
       const unavailableSlots = allPossibleSlots.filter(slot =>
         bookedSlotsForChair.includes(slot)
       );
@@ -714,7 +734,7 @@ export const appointmentService = {
       if (appt.userId !== userId) {
         throw new Error('Não pode cancelar agendamento de outro usuário.');
       }
-      const now = new Date();
+      const now = toZonedTime(new Date(), TIMEZONE);
       const diffHours =
         (appt.datetimeStart.getTime() - now.getTime()) / 3600000;
       if (diffHours < CANCELLATION_NOTICE_HOURS) {
