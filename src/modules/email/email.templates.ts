@@ -1,16 +1,15 @@
 import type { AppointmentEmailData, EmailTemplate } from './types';
+import { timezoneUtils } from '@/config/timezone';
 
 export const emailTemplates = {
   // Template para agendamento criado
   created: (data: AppointmentEmailData): EmailTemplate => {
     const formatDate = (date: Date) => {
-      // Frontend já envia no horário local correto, não precisa converter timezone
-      return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+      return timezoneUtils.formatDateSimple(date);
     };
 
     const formatTime = (date: Date) => {
-      // Frontend já envia no horário local correto, não precisa converter timezone
-      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      return timezoneUtils.formatTimeSimple(date);
     };
 
     return {
@@ -167,13 +166,11 @@ export const emailTemplates = {
 
   confirmation: (data: AppointmentEmailData): EmailTemplate => {
     const formatDate = (date: Date) => {
-      // Frontend já envia no horário local correto, não precisa converter timezone
-      return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+      return timezoneUtils.formatDateSimple(date);
     };
 
     const formatTime = (date: Date) => {
-      // Frontend já envia no horário local correto, não precisa converter timezone
-      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      return timezoneUtils.formatTimeSimple(date);
     };
 
     return {
@@ -315,13 +312,11 @@ export const emailTemplates = {
 
   reminder: (data: AppointmentEmailData): EmailTemplate => {
     const formatDate = (date: Date) => {
-      // Frontend já envia no horário local correto, não precisa converter timezone
-      return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+      return timezoneUtils.formatDateSimple(date);
     };
 
     const formatTime = (date: Date) => {
-      // Frontend já envia no horário local correto, não precisa converter timezone
-      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+      return timezoneUtils.formatTimeSimple(date);
     };
 
     return {

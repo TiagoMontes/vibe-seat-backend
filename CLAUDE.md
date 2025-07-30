@@ -36,6 +36,10 @@ docker exec backend-app-1 bun run seed:admin
 docker exec backend-app-1 bun run prisma:migrate
 docker exec -it backend-app-1 bash
 docker exec -it backend-db-1 mysql -u root -proot
+
+# Timezone configuration (set in docker-compose.yml)
+# TIMEZONE=America/Rio_Branco (default)
+# TZ=America/Rio_Branco (alternative)
 ```
 
 ## Architecture
@@ -52,6 +56,7 @@ The codebase follows a modular architecture in `src/modules/`:
 - **schedule** - Global scheduling configuration
 - **dayOfWeek** - Day-of-week schedule settings
 - **appointment** - Appointment booking and management
+- **email** - Email automation and logging system
 - **dashboard** - Analytics and overview data
 
 Each module contains:
@@ -71,6 +76,7 @@ Each module contains:
 - **ScheduleConfig** - Global singleton for schedule configuration with JSON time ranges
 - **DayOfWeek** - Available days linked to schedule config
 - **Appointment** - Bookings with status (SCHEDULED/CANCELLED/CONFIRMED)
+- **EmailLog** - Email tracking system for appointment-related communications
 
 ### Database
 
@@ -78,6 +84,7 @@ Each module contains:
 - **Connection**: Configured in docker-compose.yml
 - **Migrations**: Located in `prisma/migrations/`
 - **Schema**: `prisma/schema.prisma`
+- **Timezone**: Centralized configuration via TIMEZONE environment variable
 
 ### Key Features
 
@@ -85,6 +92,7 @@ Each module contains:
 - User registration with approval workflow
 - Global schedule configuration with flexible time ranges
 - Chair availability and appointment management
+- Automated email system with comprehensive logging
 - Soft deletes on all models (createdAt, updatedAt, deletedAt)
 
 ### Permission Hierarchy
@@ -152,3 +160,8 @@ Each module contains:
 - **Database**: MySQL with Prisma ORM
 - **Authentication**: JWT tokens for API access
 - **Path Mapping**: Uses `@/` alias for `src/` directory
+- **Timezone**: Centralized configuration via TIMEZONE environment variable
+  - Default: `America/Rio_Branco` (UTC-5)
+  - Affects: appointments, emails, cron jobs, logs
+  - **No .env files needed** - all configuration in docker-compose.yml
+  - Cron jobs are automatically restarted when Docker containers restart

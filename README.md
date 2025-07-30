@@ -34,7 +34,7 @@ cd backend
 
 ### 2. Configuração de Variáveis de Ambiente
 
-O projeto está configurado para usar as variáveis de ambiente definidas no `docker-compose.yml`. Para funcionamento completo, configure as seguintes variáveis:
+O projeto está configurado para usar as variáveis de ambiente definidas no `docker-compose.yml`. **Não crie arquivos `.env` locais** - toda configuração fica no Docker Compose. Para funcionamento completo, configure as seguintes variáveis:
 
 #### 📧 Configuração de Email (Mailtrap)
 
@@ -46,6 +46,8 @@ environment:
   MAILTRAP_API_TOKEN: seu_token_da_api_mailtrap
   MAILTRAP_INBOX_ID: seu_inbox_id
   DEFAULT_FROM_EMAIL: noreply@sejusp.gov.br
+  # Configuração de timezone (opcional, padrão: America/Rio_Branco)
+  TIMEZONE: America/Rio_Branco
 ```
 
 #### Como obter as credenciais do Mailtrap:
@@ -69,7 +71,31 @@ environment:
 - Confirmação de presença
 - Lembretes de agendamento
 
-**⚠️ Importante**: Não crie um arquivo `.env` local, pois isso pode causar conflitos com as configurações do Docker.
+**⚠️ Cron Jobs e Reinicialização:**
+
+Quando você reinicia o Docker usando `bun run start:docker`, os cron jobs de lembretes são **automaticamente reiniciados** e continuam funcionando normalmente. O sistema utiliza timezone centralizado que é aplicado tanto para os cron jobs quanto para todo o sistema de emails.
+
+#### 🌍 Configuração de Timezone
+
+O sistema permite configurar o timezone da aplicação através da variável de ambiente `TIMEZONE` ou `TZ`:
+
+```yaml
+# Opções de timezone disponíveis:
+TIMEZONE: America/Rio_Branco    # Acre (UTC-5) - padrão
+TIMEZONE: America/Sao_Paulo     # São Paulo (UTC-3)
+TIMEZONE: America/Fortaleza     # Ceará (UTC-3)
+TIMEZONE: UTC                   # UTC (UTC±0)
+```
+
+**Timezone padrão**: `America/Rio_Branco` (UTC-5)
+
+Esta configuração afeta:
+- ✅ Validação de horários de agendamento
+- ✅ Emails automáticos (templates e horários)
+- ✅ Sistema de lembretes (cron jobs)
+- ✅ Logs e timestamps da aplicação
+
+**⚠️ Importante**: Não crie um arquivo `.env` local, pois isso pode causar conflitos com as configurações do Docker. O sistema foi projetado para funcionar exclusivamente com `docker-compose.yml`.
 
 ---
 

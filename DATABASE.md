@@ -8,30 +8,31 @@ O sistema utiliza **MySQL** como banco de dados principal, gerenciado através d
 
 ## 📊 Diagrama de Relacionamentos
 
-```
-┌─────────────┐     1:N     ┌─────────────┐     1:N     ┌─────────────┐
-│     Role    │ ◄────────── │    User     │ ◄────────── │ Appointment │
-└─────────────┘             └─────────────┘             └─────────────┘
-       │                           │                           │
-       │ 1:N                       │ 1:N                       │ N:1
-       │                           │                           │
-       ▼                           ▼                           ▼
-┌─────────────┐             ┌─────────────┐             ┌─────────────┐
-│UserApproval │             │UserApproval │             │    Chair    │
-└─────────────┘             └─────────────┘             └─────────────┘
-                                   │
-                                   │ N:1
-                                   ▼
-                            ┌─────────────┐
-                            │    User     │
-                            │(ApprovedBy) │
-                            └─────────────┘
+### Entidades e Relacionamentos:
 
-┌─────────────┐     1:N     ┌─────────────┐
-│ScheduleConfig│ ◄────────── │ DayOfWeek   │
-│ (Singleton) │             └─────────────┘
-└─────────────┘
-```
+**ROLE** ────(um role pode ter)───→ **MUITOS USERS**
+- Um perfil de acesso (admin, attendant, user) pode ser atribuído a vários usuários
+- Cada usuário pertence a apenas um role
+
+**USER** ────(um user pode ter)───→ **1 APPOINTMENT ATIVO**
+- Regra de negócio: usuário só pode ter 1 agendamento com status SCHEDULED/CONFIRMED
+- Historicamente pode ter vários agendamentos (incluindo cancelados/passados)
+
+**APPOINTMENT** ────(um appointment pode ter)───→ **MUITOS EMAIL LOGS**
+- Cada agendamento gera vários emails: confirmação, lembrete, etc.
+- Rastreamento completo de comunicação por agendamento
+
+**CHAIR** ────(uma chair pode ter)───→ **MUITOS APPOINTMENTS**
+- Uma cadeira pode ser agendada várias vezes em horários diferentes
+- Cada agendamento usa apenas uma cadeira
+
+**USER** ────(um user pode ter)───→ **MUITAS APROVAÇÕES**
+- Usuário pode passar por múltiplos processos de aprovação
+- Mudanças de role geram novas aprovações
+
+**SCHEDULE CONFIG** ────(uma config tem)───→ **MUITOS DIAS DA SEMANA**
+- Configuração global define quais dias estão disponíveis
+- Singleton: apenas uma configuração ativa por vez
 
 ---
 
@@ -40,12 +41,36 @@ O sistema utiliza **MySQL** como banco de dados principal, gerenciado através d
 ### Conexão
 
 - Conexão feita pelo docker-compose.yml
+- **DATABASE_URL**: `mysql://root:root@db:3306/vibe-seat-db?connection_limit=50`
 
 ### Provider
 
 - **Banco**: MySQL
 - **ORM**: Prisma
 - **Ambiente**: Docker (recomendado)
+
+### Configuração de Timezone
+
+O sistema utiliza configuração centralizada de timezone através de variáveis de ambiente:
+
+```yaml
+# docker-compose.yml
+environment:
+  DATABASE_URL: mysql://root:root@db:3306/vibe-seat-db?connection_limit=50
+  TIMEZONE: America/Rio_Branco    # Timezone padrão (UTC-5)
+  # ou
+  TZ: America/Rio_Branco          # Alternativo
+```
+
+**Timezone padrão**: `America/Rio_Branco` (UTC-5)
+
+**Funcionalidades afetadas:**
+- ✅ Timestamps de agendamentos (datetimeStart, datetimeEnd)
+- ✅ Sistema de emails automáticos
+- ✅ Cron jobs para lembretes
+- ✅ Logs e auditoria
+
+**⚠️ Importante**: Não use arquivos `.env` locais. Todas as configurações ficam no `docker-compose.yml`.
 
 ---
 
@@ -213,6 +238,45 @@ CREATE TABLE Appointment (
 - `CANCELLED`: Cancelado
 - `CONFIRMED`: Presença confirmada
 
+### 8. **EmailLog** - Log de Emails Automáticos
+
+```sql
+CREATE TABLE EmailLog (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    appointmentId INT NOT NULL,
+    emailType ENUM('CONFIRMATION', 'REMINDER', 'CREATED') NOT NULL,
+    recipientEmail VARCHAR(255) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    status ENUM('PENDING', 'SENT', 'FAILED') DEFAULT 'PENDING',
+    sentAt DATETIME NULL,
+    errorMessage TEXT NULL,
+    category VARCHAR(255) NULL,  -- Categoria do Mailtrap
+    createdAt DATETIME DEFAULT NOW(),
+    updatedAt DATETIME ON UPDATE NOW(),
+    deletedAt DATETIME NULL,
+    FOREIGN KEY (appointmentId) REFERENCES Appointment(id),
+    UNIQUE KEY unique_appointment_email_type (appointmentId, emailType)
+);
+```
+
+**Propósito**: Rastreia e gerencia envio de emails automáticos relacionados a agendamentos
+
+**Tipos de Email (EmailType)**:
+- `CONFIRMATION`: Email de confirmação de agendamento
+- `REMINDER`: Email de lembrete enviado antes da sessão
+- `CREATED`: Email notificando criação de novo agendamento
+
+**Status de Email (EmailStatus)**:
+- `PENDING`: Email pendente para envio
+- `SENT`: Email enviado com sucesso
+- `FAILED`: Falha no envio do email
+
+**Campos Especiais**:
+- `sentAt`: Timestamp de quando o email foi enviado (null se pendente/falhou)
+- `errorMessage`: Detalhes do erro em caso de falha no envio
+- `category`: Categoria do Mailtrap para organização e análise
+- **Unique Constraint**: Previne duplicação do mesmo tipo de email para o mesmo agendamento
+
 ---
 
 ## 🔗 Relacionamentos Detalhados
@@ -234,6 +298,13 @@ CREATE TABLE Appointment (
 - Uma cadeira pode ter múltiplos agendamentos
 - Cada agendamento usa uma cadeira
 - Chave estrangeira: `Appointment.chairId → Chair.id`
+
+### **1:N - Appointment → EmailLog**
+
+- Um agendamento pode gerar múltiplos logs de email
+- Cada log de email pertence a um agendamento
+- Chave estrangeira: `EmailLog.appointmentId → Appointment.id`
+- **Constraint única**: `(appointmentId, emailType)` - previne duplicatas do mesmo tipo
 
 ### **1:N - ScheduleConfig → DayOfWeek**
 
@@ -293,6 +364,7 @@ UNIQUE INDEX idx_chair_name ON Chair(name)
 INDEX idx_user_roleId ON User(roleId)
 INDEX idx_appointment_userId ON Appointment(userId)
 INDEX idx_appointment_chairId ON Appointment(chairId)
+INDEX idx_emaillog_appointmentId ON EmailLog(appointmentId)
 INDEX idx_userapproval_userId ON UserApproval(userId)
 INDEX idx_userapproval_requestedRoleId ON UserApproval(requestedRoleId)
 INDEX idx_userapproval_approvedById ON UserApproval(approvedById)
@@ -306,6 +378,7 @@ INDEX idx_dayofweek_scheduleConfigId ON DayOfWeek(scheduleConfigId)
 INDEX idx_user_deletedAt ON User(deletedAt)
 INDEX idx_chair_deletedAt ON Chair(deletedAt)
 INDEX idx_appointment_deletedAt ON Appointment(deletedAt)
+INDEX idx_emaillog_deletedAt ON EmailLog(deletedAt)
 INDEX idx_role_deletedAt ON Role(deletedAt)
 INDEX idx_userapproval_deletedAt ON UserApproval(deletedAt)
 INDEX idx_scheduleconfig_deletedAt ON ScheduleConfig(deletedAt)
@@ -322,6 +395,20 @@ INDEX idx_dayofweek_deletedAt ON DayOfWeek(deletedAt)
 SELECT * FROM User
 WHERE deletedAt IS NULL
 AND status = 'approved';
+```
+
+### **Agendamentos por Timezone**
+
+```sql
+-- Agendamentos de hoje (considerando timezone da aplicação)
+SELECT a.*, u.fullName, c.name as chairName,
+       CONVERT_TZ(a.datetimeStart, 'UTC', 'America/Rio_Branco') as localStart,
+       CONVERT_TZ(a.datetimeEnd, 'UTC', 'America/Rio_Branco') as localEnd
+FROM Appointment a
+JOIN User u ON a.userId = u.id
+JOIN Chair c ON a.chairId = c.id
+WHERE DATE(CONVERT_TZ(a.datetimeStart, 'UTC', 'America/Rio_Branco')) = CURDATE()
+AND a.deletedAt IS NULL;
 ```
 
 ### **Agendamentos de Hoje**
@@ -358,6 +445,28 @@ AND status IN ('SCHEDULED', 'CONFIRMED')
 AND deletedAt IS NULL;
 ```
 
+### **Logs de Email por Agendamento**
+
+```sql
+-- Histórico completo de emails de um agendamento
+SELECT el.*, a.datetimeStart, u.fullName, u.email
+FROM EmailLog el
+JOIN Appointment a ON el.appointmentId = a.id
+JOIN User u ON a.userId = u.id
+WHERE el.appointmentId = ?
+AND el.deletedAt IS NULL
+ORDER BY el.createdAt DESC;
+
+-- Emails pendentes para envio
+SELECT el.*, a.datetimeStart, u.email as recipientEmail
+FROM EmailLog el
+JOIN Appointment a ON el.appointmentId = a.id  
+JOIN User u ON a.userId = u.id
+WHERE el.status = 'PENDING'
+AND el.deletedAt IS NULL
+ORDER BY el.createdAt ASC;
+```
+
 ---
 
 ## 📝 Migrations e Versionamento
@@ -376,6 +485,10 @@ bunx prisma migrate reset
 
 # Gerar cliente Prisma
 bunx prisma generate
+
+# Comandos no Docker (recomendado)
+docker exec backend-app-1 bun run prisma:migrate
+docker exec backend-app-1 bun run prisma:generate
 ```
 
 ### **Estrutura de Migrations**

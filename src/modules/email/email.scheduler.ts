@@ -1,5 +1,6 @@
 import * as cron from 'node-cron';
 import { emailService } from './email.service';
+import { TIMEZONE } from '@/config/timezone';
 import type { AppointmentEmailData } from './types';
 
 export const emailScheduler = {
@@ -78,7 +79,7 @@ export const emailScheduler = {
       '*/15 * * * *',
       emailScheduler.processReminders,
       {
-        timezone: 'America/Rio_Branco',
+        timezone: TIMEZONE,
       }
     );
 

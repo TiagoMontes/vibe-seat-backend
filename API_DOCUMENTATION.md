@@ -10,6 +10,33 @@ Esta API gerencia o sistema de agendamento de cadeiras de massagem do SEJUSP com
 http://localhost:3001
 ```
 
+## Configuração de Timezone
+
+O sistema utiliza configuração centralizada de timezone através de variáveis de ambiente no `docker-compose.yml`:
+
+```yaml
+environment:
+  TIMEZONE: America/Rio_Branco    # Timezone padrão (UTC-5)
+  # ou
+  TZ: America/Rio_Branco          # Alternativo
+```
+
+**Timezones Suportados:**
+- `America/Rio_Branco` - Acre (UTC-5) - padrão
+- `America/Sao_Paulo` - São Paulo (UTC-3)
+- `America/Fortaleza` - Ceará (UTC-3)
+- `UTC` - UTC (UTC±0)
+
+**Funcionalidades Afetadas:**
+- ✅ Validação de horários de agendamento
+- ✅ Sistema de emails automáticos
+- ✅ Agendamento de lembretes (cron jobs)
+- ✅ Logs e timestamps
+
+**⚠️ Cron Jobs e Reinicialização:**
+
+Quando você reinicia o Docker usando `bun run start:docker`, os cron jobs de lembretes são automaticamente reiniciados e continuam funcionando normalmente. O sistema utiliza timezone centralizado que é aplicado tanto para os cron jobs quanto para todo o sistema de emails.
+
 ## Autenticação
 
 A API usa autenticação JWT Bearer Token. Após fazer login, use o token retornado no header `Authorization: Bearer <token>`.
@@ -513,6 +540,9 @@ O sistema envia emails automáticos para os usuários em três momentos:
 - **API**: REST API do Mailtrap
 - **Templates**: HTML responsivos com dados do agendamento
 - **Logs**: Todos os emails são registrados na tabela `EmailLog`
+- **Timezone**: Utiliza configuração centralizada do sistema
+- **Cron Jobs**: Agendador automático para lembretes (1h antes do agendamento)
+- **Reinicialização**: Cron jobs são automaticamente reiniciados com o container
 
 **Dados incluídos nos emails:**
 

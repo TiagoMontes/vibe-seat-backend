@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "SEJUSP Backend API",
-    "description": "API completa do sistema de agendamento de cadeiras de massagem SEJUSP",
+    "description": "API completa do sistema de agendamento de cadeiras de massagem SEJUSP com configuração centralizada de timezone",
     "version": "2.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },

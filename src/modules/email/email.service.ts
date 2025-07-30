@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { toZonedTime } from 'date-fns-tz';
+import { timezoneUtils } from '@/config/timezone';
 import type {
   EmailData,
   AppointmentEmailData,
@@ -11,7 +11,6 @@ import { emailTemplates } from './email.templates';
 const token =
   process.env.MAILTRAP_API_TOKEN || '6ab07fc7035c315cf6967814daeab66f';
 const testInboxId = Number(process.env.MAILTRAP_INBOX_ID) || 3928333;
-const TIMEZONE = 'America/Rio_Branco';
 
 if (!token || !testInboxId) {
   throw new Error('MAILTRAP_API_TOKEN e MAILTRAP_INBOX_ID são obrigatórios.');
@@ -224,12 +223,12 @@ export const emailService = {
 
   // Buscar appointments que precisam de lembrete
   getAppointmentsForReminder: async (timeWindowMinutes: number = 60) => {
-    // Usar timezone local do Acre em vez de UTC
-    const now = toZonedTime(new Date(), TIMEZONE);
-    const startTime = new Date(
-      now.getTime() + (timeWindowMinutes - 15) * 60000
-    ); // 45min a partir de agora
-    const endTime = new Date(now.getTime() + (timeWindowMinutes + 15) * 60000); // 75min a partir de agora
+    // Usar timezone local em vez de UTC
+    const now = timezoneUtils.now();
+    // Buscar agendamentos que começam exatamente em 1 hora (±7.5 min para cobrir a janela do cron de 15min)
+    const targetTime = new Date(now.getTime() + timeWindowMinutes * 60000); // Exatamente 1 hora
+    const startTime = new Date(targetTime.getTime() - 7.5 * 60000); // 7.5min antes
+    const endTime = new Date(targetTime.getTime() + 7.5 * 60000); // 7.5min depois
 
     return prisma.appointment.findMany({
       where: {

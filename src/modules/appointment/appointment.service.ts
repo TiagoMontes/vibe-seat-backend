@@ -1,7 +1,7 @@
 import { appointmentRepository } from './appointment.repository';
 import { prisma } from '@/lib/prisma';
 import { emailService } from '@/modules/email/email.service';
-import { toZonedTime, format } from 'date-fns-tz';
+import { format } from 'date-fns-tz';
 import type {
   AppointmentInput,
   AppointmentFilters,
@@ -11,9 +11,10 @@ import type {
 } from './types';
 import type { AppointmentEmailData } from '@/modules/email/types';
 
+import { timezoneUtils } from '@/config/timezone';
+
 const APPOINTMENT_DURATION_MINUTES = 30;
 const CANCELLATION_NOTICE_HOURS = 3;
-const TIMEZONE = 'America/Rio_Branco';
 
 const validateAndParseQueryParams = (
   query: AppointmentQueryParams
@@ -90,7 +91,7 @@ export const appointmentService = {
 
     // 1.0) Verificar se o usuário já tem appointment ativo
     // Usuário só pode ter 1 agendamento ativo por vez (não cancelado e futuro)
-    const now = toZonedTime(new Date(), TIMEZONE);
+    const now = timezoneUtils.now();
     const activeAppointments = await prisma.appointment.findMany({
       where: {
         userId,
@@ -312,7 +313,7 @@ export const appointmentService = {
     };
 
     // Calculate additional status-based counts for confirmed appointments
-    const now = toZonedTime(new Date(), TIMEZONE);
+    const now = timezoneUtils.now();
     const confirmedAppointments = appointments.filter(
       apt => apt.status === 'CONFIRMED'
     );
@@ -467,7 +468,7 @@ export const appointmentService = {
     ]);
 
     // 3. Verificar se o dia da semana está configurado
-    const targetDate = toZonedTime(new Date(date), TIMEZONE);
+    const targetDate = timezoneUtils.toLocalTime(new Date(date));
     const dayNames = [
       'Domingo',
       'Segunda-feira',
@@ -568,7 +569,7 @@ export const appointmentService = {
 
     // 6. Gerar todos os horários possíveis baseados nas configurações
     // Usar timezone do Acre para obter a data/hora atual local
-    const now = toZonedTime(new Date(), TIMEZONE);
+    const now = timezoneUtils.now();
 
     // Criar data de hoje no formato YYYY-MM-DD no timezone local
     const todayString = format(now, 'yyyy-MM-dd');
@@ -734,7 +735,7 @@ export const appointmentService = {
       if (appt.userId !== userId) {
         throw new Error('Não pode cancelar agendamento de outro usuário.');
       }
-      const now = toZonedTime(new Date(), TIMEZONE);
+      const now = timezoneUtils.now();
       const diffHours =
         (appt.datetimeStart.getTime() - now.getTime()) / 3600000;
       if (diffHours < CANCELLATION_NOTICE_HOURS) {
