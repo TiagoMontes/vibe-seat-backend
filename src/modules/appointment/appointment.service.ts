@@ -633,10 +633,9 @@ export const appointmentService = {
     bookedTimes.forEach(booking => {
       const chairId = booking.chairId;
       const timeISO = booking.datetimeStart.toISOString();
-      const timeSlot = format(
-        toZonedTime(booking.datetimeStart, TIMEZONE),
-        'HH:mm'
-      ); // "HH:MM" no fuso local
+      // Converter para timezone local para comparar com os slots gerados
+      const localDate = new Date(booking.datetimeStart);
+      const timeSlot = `${localDate.getHours().toString().padStart(2, '0')}:${localDate.getMinutes().toString().padStart(2, '0')}`;
 
       if (!bookedTimesByChair[chairId]) {
         bookedTimesByChair[chairId] = [];
