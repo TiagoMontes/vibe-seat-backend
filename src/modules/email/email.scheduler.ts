@@ -78,7 +78,7 @@ export const emailScheduler = {
       '*/15 * * * *',
       emailScheduler.processReminders,
       {
-        timezone: 'America/Sao_Paulo',
+        timezone: 'America/Rio_Branco',
       }
     );
 

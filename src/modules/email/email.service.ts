@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { toZonedTime } from 'date-fns-tz';
 import type {
   EmailData,
   AppointmentEmailData,
@@ -10,6 +11,7 @@ import { emailTemplates } from './email.templates';
 const token =
   process.env.MAILTRAP_API_TOKEN || '6ab07fc7035c315cf6967814daeab66f';
 const testInboxId = Number(process.env.MAILTRAP_INBOX_ID) || 3928333;
+const TIMEZONE = 'America/Rio_Branco';
 
 if (!token || !testInboxId) {
   throw new Error('MAILTRAP_API_TOKEN e MAILTRAP_INBOX_ID são obrigatórios.');
@@ -222,7 +224,8 @@ export const emailService = {
 
   // Buscar appointments que precisam de lembrete
   getAppointmentsForReminder: async (timeWindowMinutes: number = 60) => {
-    const now = new Date();
+    // Usar timezone local do Acre em vez de UTC
+    const now = toZonedTime(new Date(), TIMEZONE);
     const startTime = new Date(
       now.getTime() + (timeWindowMinutes - 15) * 60000
     ); // 45min a partir de agora

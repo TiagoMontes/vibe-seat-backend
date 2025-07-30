@@ -4,18 +4,13 @@ export const emailTemplates = {
   // Template para agendamento criado
   created: (data: AppointmentEmailData): EmailTemplate => {
     const formatDate = (date: Date) => {
-      return date.toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      });
+      // Frontend já envia no horário local correto, não precisa converter timezone
+      return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
     };
 
     const formatTime = (date: Date) => {
-      return date.toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      // Frontend já envia no horário local correto, não precisa converter timezone
+      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
     };
 
     return {
@@ -172,18 +167,13 @@ export const emailTemplates = {
 
   confirmation: (data: AppointmentEmailData): EmailTemplate => {
     const formatDate = (date: Date) => {
-      return date.toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      });
+      // Frontend já envia no horário local correto, não precisa converter timezone
+      return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
     };
 
     const formatTime = (date: Date) => {
-      return date.toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      // Frontend já envia no horário local correto, não precisa converter timezone
+      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
     };
 
     return {
@@ -325,18 +315,13 @@ export const emailTemplates = {
 
   reminder: (data: AppointmentEmailData): EmailTemplate => {
     const formatDate = (date: Date) => {
-      return date.toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      });
+      // Frontend já envia no horário local correto, não precisa converter timezone
+      return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
     };
 
     const formatTime = (date: Date) => {
-      return date.toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      // Frontend já envia no horário local correto, não precisa converter timezone
+      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
     };
 
     return {

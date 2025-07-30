@@ -174,7 +174,8 @@ export const appointmentService = {
     }
 
     // Verificar se o horário está dentro dos timeRanges configurados
-    const timeString = format(toZonedTime(start, TIMEZONE), 'HH:mm'); // "HH:MM" no fuso local
+    // O frontend já envia no horário local, não precisa converter timezone
+    const timeString = `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`;
     const timeRanges = scheduleConfig.timeRanges as Array<{
       start: string;
       end: string;
