@@ -1,11 +1,13 @@
 import type { Request, Response } from 'express';
 import { chairService } from '@/modules/chair/chair.service';
+import { extractAuditContext } from '@/modules/audit/audit.utils';
 import type { ChairInput, ChairQueryParams } from '@/modules/chair/types';
 
 export const chairController = {
   create: async (req: Request<{}, {}, ChairInput>, res: Response) => {
     try {
-      const result = await chairService.create(req.body);
+      const auditContext = extractAuditContext(req);
+      const result = await chairService.create(req.body, auditContext);
       return res.status(201).json({
         success: true,
         message: 'Cadeira criada com sucesso',
@@ -119,7 +121,8 @@ export const chairController = {
         });
       }
 
-      const updated = await chairService.update(id, req.body);
+      const auditContext = extractAuditContext(req);
+      const updated = await chairService.update(id, req.body, auditContext);
       return res.status(200).json({
         success: true,
         message: 'Cadeira atualizada com sucesso',
@@ -153,7 +156,8 @@ export const chairController = {
         });
       }
 
-      await chairService.delete(id);
+      const auditContext = extractAuditContext(req);
+      await chairService.delete(id, auditContext);
       return res.status(200).json({
         success: true,
         message: 'Cadeira excluída com sucesso',

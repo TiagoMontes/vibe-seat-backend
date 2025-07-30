@@ -1,10 +1,12 @@
 import { prisma } from '@/lib/prisma';
 import { approvalRepository } from './approval.repository';
+import { auditService } from '@/modules/audit/audit.service';
 import type {
   ApprovalFilters,
   ApprovalWithPagination,
   PaginationMeta,
 } from './types';
+import type { AuditContext } from '@/modules/audit/types';
 
 export const approvalService = {
   allPendingApprovals: async () => {
@@ -66,7 +68,8 @@ export const approvalService = {
   updateApprovalStatus: async (
     id: number,
     status: 'approved' | 'rejected',
-    approverId: number
+    approverId: number,
+    context?: AuditContext
   ) => {
     const approval = await prisma.userApproval.findUnique({
       where: { id },
@@ -89,13 +92,46 @@ export const approvalService = {
       },
     });
 
-    await prisma.user.update({
+    // Atualizar status do usuário
+    const updatedUser = await prisma.user.update({
       where: { id: approval.userId },
       data: {
         status,
         roleId: status === 'approved' ? approval.requestedRoleId : undefined,
       },
     });
+
+    // Log da mudança de status de aprovação
+    try {
+      await auditService.logStatusChange(
+        'UserApproval',
+        id,
+        approval.status,
+        status,
+        { ...context, userId: approverId },
+        {
+          userId: approval.userId,
+          requestedRoleId: approval.requestedRoleId,
+          approvedById: approverId,
+        }
+      );
+
+      // Log da mudança de status do usuário
+      await auditService.logStatusChange(
+        'User',
+        approval.userId,
+        approval.user.status,
+        status,
+        { ...context, userId: approverId },
+        {
+          username: approval.user.username,
+          roleId: updatedUser.roleId,
+          approvedBy: approverId,
+        }
+      );
+    } catch (error) {
+      console.error('Erro ao auditar mudança de status de aprovação:', error);
+    }
 
     return {
       message: `Usuário ${status} com sucesso.`,

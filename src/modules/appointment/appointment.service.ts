@@ -2,6 +2,7 @@ import { appointmentRepository } from './appointment.repository';
 import { prisma } from '@/lib/prisma';
 import { emailService } from '@/modules/email/email.service';
 import { format } from 'date-fns-tz';
+import { auditService } from '@/modules/audit/audit.service';
 import type {
   AppointmentInput,
   AppointmentFilters,
@@ -10,6 +11,7 @@ import type {
   AppointmentQueryParams,
 } from './types';
 import type { AppointmentEmailData } from '@/modules/email/types';
+import type { AuditContext } from '@/modules/audit/types';
 
 import { timezoneUtils } from '@/config/timezone';
 
@@ -83,7 +85,7 @@ export const appointmentService = {
   },
 
   // 1) Criar novo agendamento
-  create: async (userId: number, input: AppointmentInput) => {
+  create: async (userId: number, input: AppointmentInput, context?: AuditContext) => {
     const start = new Date(input.datetimeStart);
     const end = new Date(
       start.getTime() + APPOINTMENT_DURATION_MINUTES * 60000
@@ -251,6 +253,24 @@ export const appointmentService = {
         );
         // Não falhar a criação se o email falhar
       }
+    }
+
+    // Log da criação do agendamento
+    try {
+      await auditService.logCreate(
+        'Appointment',
+        createdAppointment.id,
+        {
+          userId: createdAppointment.userId,
+          chairId: createdAppointment.chairId,
+          datetimeStart: createdAppointment.datetimeStart,
+          datetimeEnd: createdAppointment.datetimeEnd,
+          status: createdAppointment.status,
+        },
+        context
+      );
+    } catch (error) {
+      console.error('Erro ao auditar criação de agendamento:', error);
     }
 
     return createdAppointment;
@@ -468,7 +488,15 @@ export const appointmentService = {
     ]);
 
     // 3. Verificar se o dia da semana está configurado
-    const targetDate = timezoneUtils.toLocalTime(new Date(date));
+    // Criar data diretamente no timezone local sem conversão UTC
+    const dateParts = date.split('-');
+    if (dateParts.length !== 3) {
+      throw new Error('Formato de data inválido. Use YYYY-MM-DD');
+    }
+    const year = parseInt(dateParts[0]!);
+    const month = parseInt(dateParts[1]!) - 1; // month é 0-indexed
+    const day = parseInt(dateParts[2]!);
+    const targetDate = new Date(year, month, day);
     const dayNames = [
       'Domingo',
       'Segunda-feira',
@@ -726,7 +754,7 @@ export const appointmentService = {
   },
 
   // 4) Cancelar agendamento
-  cancel: async (id: number, userId: number, role: string) => {
+  cancel: async (id: number, userId: number, role: string, context?: AuditContext) => {
     const appt = await prisma.appointment.findUnique({ where: { id } });
     if (!appt) throw new Error('Agendamento não encontrado.');
 
@@ -745,11 +773,32 @@ export const appointmentService = {
       }
     }
 
-    return appointmentRepository.update(id, { status: 'CANCELLED' });
+    const updatedAppointment = await appointmentRepository.update(id, { status: 'CANCELLED' });
+
+    // Log do cancelamento
+    try {
+      await auditService.logStatusChange(
+        'Appointment',
+        id,
+        appt.status,
+        'CANCELLED',
+        context,
+        {
+          userId: appt.userId,
+          chairId: appt.chairId,
+          datetimeStart: appt.datetimeStart,
+          datetimeEnd: appt.datetimeEnd,
+        }
+      );
+    } catch (error) {
+      console.error('Erro ao auditar cancelamento de agendamento:', error);
+    }
+
+    return updatedAppointment;
   },
 
   // 5) Confirmar presença (somente admin/atendente)
-  confirm: async (id: number) => {
+  confirm: async (id: number, context?: AuditContext) => {
     const appt = await prisma.appointment.findUnique({
       where: { id },
       include: {
@@ -807,6 +856,26 @@ export const appointmentService = {
         );
         // Não falhar a confirmação se o email falhar
       }
+    }
+
+    // Log da confirmação
+    try {
+      await auditService.logStatusChange(
+        'Appointment',
+        id,
+        appt.status,
+        'CONFIRMED',
+        context,
+        {
+          userId: appt.userId,
+          chairId: appt.chairId,
+          datetimeStart: appt.datetimeStart,
+          datetimeEnd: appt.datetimeEnd,
+          presenceConfirmed: true,
+        }
+      );
+    } catch (error) {
+      console.error('Erro ao auditar confirmação de agendamento:', error);
     }
 
     return updatedAppointment;

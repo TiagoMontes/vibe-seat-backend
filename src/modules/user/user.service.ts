@@ -1,6 +1,7 @@
 import { userRepository } from '@/modules/user/user.repository';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { auditService } from '@/modules/audit/audit.service';
 import type {
   UserFilters,
   UserWithPagination,
@@ -8,9 +9,10 @@ import type {
   UserInput,
   UserUpdateInput,
 } from './types';
+import type { AuditContext } from '@/modules/audit/types';
 
 export const userService = {
-  create: async (input: UserInput) => {
+  create: async (input: UserInput, context?: AuditContext) => {
     // Check for existing unique fields
     const [existingUsername, existingCpf, existingEmail, existingRegistration] =
       await Promise.all([
@@ -59,6 +61,32 @@ export const userService = {
 
       return user;
     });
+
+    // Log da criação do usuário (sem dados sensíveis)
+    try {
+      await auditService.logCreate(
+        'User',
+        result.id,
+        {
+          username: result.username,
+          roleId: result.roleId,
+          fullName: result.fullName,
+          cpf: result.cpf,
+          jobFunction: result.jobFunction,
+          position: result.position,
+          registration: result.registration,
+          sector: result.sector,
+          email: result.email,
+          phone: result.phone,
+          gender: result.gender,
+          birthDate: result.birthDate,
+          status: result.status,
+        },
+        context
+      );
+    } catch (error) {
+      console.error('Erro ao auditar criação de usuário:', error);
+    }
 
     return result;
   },
@@ -116,7 +144,7 @@ export const userService = {
 
   getById: (id: number) => userRepository.findById(id),
 
-  update: async (id: number, input: UserUpdateInput) => {
+  update: async (id: number, input: UserUpdateInput, context?: AuditContext) => {
     // Check if user exists
     const existingUser = await userRepository.findById(id);
     if (!existingUser) {
@@ -247,8 +275,86 @@ export const userService = {
     }
 
     // Update the user
-    return await userRepository.update(id, updateData);
+    const updatedUser = await userRepository.update(id, updateData);
+
+    // Log da atualização do usuário
+    try {
+      await auditService.logUpdate(
+        'User',
+        id,
+        {
+          username: existingUser.username,
+          roleId: existingUser.roleId,
+          fullName: existingUser.fullName,
+          cpf: existingUser.cpf,
+          jobFunction: existingUser.jobFunction,
+          position: existingUser.position,
+          registration: existingUser.registration,
+          sector: existingUser.sector,
+          email: existingUser.email,
+          phone: existingUser.phone,
+          gender: existingUser.gender,
+          birthDate: existingUser.birthDate,
+        },
+        {
+          username: updatedUser.username,
+          roleId: updatedUser.roleId,
+          fullName: updatedUser.fullName,
+          cpf: updatedUser.cpf,
+          jobFunction: updatedUser.jobFunction,
+          position: updatedUser.position,
+          registration: updatedUser.registration,
+          sector: updatedUser.sector,
+          email: updatedUser.email,
+          phone: updatedUser.phone,
+          gender: updatedUser.gender,
+          birthDate: updatedUser.birthDate,
+        },
+        context
+      );
+    } catch (error) {
+      console.error('Erro ao auditar atualização de usuário:', error);
+    }
+
+    return updatedUser;
   },
 
-  delete: (id: number) => userRepository.delete(id),
+  delete: async (id: number, context?: AuditContext) => {
+    // Buscar dados do usuário antes de deletar
+    const existingUser = await userRepository.findById(id);
+    if (!existingUser) {
+      throw new Error('Usuário não encontrado');
+    }
+
+    // Executar o delete
+    const result = await userRepository.delete(id);
+
+    // Log da exclusão do usuário
+    try {
+      await auditService.logDelete(
+        'User',
+        id,
+        {
+          username: existingUser.username,
+          roleId: existingUser.roleId,
+          fullName: existingUser.fullName,
+          cpf: existingUser.cpf,
+          jobFunction: existingUser.jobFunction,
+          position: existingUser.position,
+          registration: existingUser.registration,
+          sector: existingUser.sector,
+          email: existingUser.email,
+          phone: existingUser.phone,
+          gender: existingUser.gender,
+          birthDate: existingUser.birthDate,
+          status: existingUser.status,
+        },
+        context
+      );
+    } catch (error) {
+      console.error('Erro ao auditar exclusão de usuário:', error);
+    }
+
+    return result;
+  },
 };

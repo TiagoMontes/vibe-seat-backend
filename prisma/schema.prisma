@@ -31,6 +31,13 @@ enum EmailStatus {
   FAILED
 }
 
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  STATUS_CHANGE
+}
+
 model Role {
   id               Int            @id @default(autoincrement())
   name             String         @unique
@@ -64,6 +71,7 @@ model User {
   approvals    UserApproval[] @relation("RequestedUser")
   approvedByMe UserApproval[] @relation("ApprovedBy")
   appointments Appointment[]
+  auditLogs    AuditLog[]
 }
 
 model UserApproval {
@@ -145,4 +153,25 @@ model EmailLog {
   deletedAt     DateTime?
   
   @@unique([appointmentId, emailType]) // Previne duplicatas do mesmo tipo para o mesmo appointment
+}
+
+model AuditLog {
+  id         Int         @id @default(autoincrement())
+  tableName  String      // Nome da tabela afetada
+  recordId   String      // ID do registro afetado (String para suportar diferentes tipos)
+  action     AuditAction // Tipo de ação
+  userId     Int?        // ID do usuário que executou a ação (nullable para ações do sistema)
+  user       User?       @relation(fields: [userId], references: [id])
+  oldValues  Json?       // Valores antigos (UPDATE/DELETE)
+  newValues  Json?       // Valores novos (CREATE/UPDATE)
+  changes    Json?       // Apenas campos alterados (resumo)
+  metadata   Json?       // Contexto adicional (IP, user agent, etc.)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  deletedAt  DateTime?
+
+  @@index([tableName, recordId])
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }

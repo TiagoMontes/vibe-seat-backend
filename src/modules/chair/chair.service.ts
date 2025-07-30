@@ -8,6 +8,8 @@ import type {
 } from '@/modules/chair/types';
 import { chairRepository } from '@/modules/chair/chair.repository';
 import { prisma } from '@/lib/prisma';
+import { auditService } from '@/modules/audit/audit.service';
+import type { AuditContext } from '@/modules/audit/types';
 
 const validateAndParseQueryParams = (query: ChairQueryParams): ChairFilters => {
   // Parse and validate page
@@ -49,9 +51,28 @@ const validateAndParseQueryParams = (query: ChairQueryParams): ChairFilters => {
 };
 
 export const chairService = {
-  create: async (data: ChairInput) => {
+  create: async (data: ChairInput, context?: AuditContext) => {
     try {
-      return await prisma.chair.create({ data });
+      const createdChair = await prisma.chair.create({ data });
+      
+      // Log da criação da cadeira
+      try {
+        await auditService.logCreate(
+          'Chair',
+          createdChair.id,
+          {
+            name: createdChair.name,
+            description: createdChair.description,
+            location: createdChair.location,
+            status: createdChair.status,
+          },
+          context
+        );
+      } catch (error) {
+        console.error('Erro ao auditar criação de cadeira:', error);
+      }
+
+      return createdChair;
     } catch (error: unknown) {
       if (
         error instanceof Error &&
@@ -127,20 +148,81 @@ export const chairService = {
     return chair;
   },
 
-  update: async (id: number, data: ChairUpdateInput) => {
+  update: async (id: number, data: ChairUpdateInput, context?: AuditContext) => {
     const existing = await prisma.chair.findUnique({ where: { id } });
     if (!existing) throw new Error('Cadeira não encontrada');
 
-    return await prisma.chair.update({
+    const updatedChair = await prisma.chair.update({
       where: { id },
       data,
     });
+
+    // Log da atualização da cadeira
+    try {
+      // Se houve mudança de status, usar logStatusChange
+      if (data.status && data.status !== existing.status) {
+        await auditService.logStatusChange(
+          'Chair',
+          id,
+          existing.status,
+          data.status,
+          context,
+          {
+            name: existing.name,
+            description: existing.description,
+            location: existing.location,
+          }
+        );
+      } else {
+        // Senão, usar logUpdate normal
+        await auditService.logUpdate(
+          'Chair',
+          id,
+          {
+            name: existing.name,
+            description: existing.description,
+            location: existing.location,
+            status: existing.status,
+          },
+          {
+            name: updatedChair.name,
+            description: updatedChair.description,
+            location: updatedChair.location,
+            status: updatedChair.status,
+          },
+          context
+        );
+      }
+    } catch (error) {
+      console.error('Erro ao auditar atualização de cadeira:', error);
+    }
+
+    return updatedChair;
   },
 
-  delete: async (id: number) => {
+  delete: async (id: number, context?: AuditContext) => {
     const existing = await chairRepository.findById(id);
     if (!existing) throw new Error('Cadeira não encontrada');
 
-    return chairRepository.delete(id);
+    const result = await chairRepository.delete(id);
+
+    // Log da exclusão da cadeira
+    try {
+      await auditService.logDelete(
+        'Chair',
+        id,
+        {
+          name: existing.name,
+          description: existing.description,
+          location: existing.location,
+          status: existing.status,
+        },
+        context
+      );
+    } catch (error) {
+      console.error('Erro ao auditar exclusão de cadeira:', error);
+    }
+
+    return result;
   },
 };
